@@ -9,7 +9,7 @@ import (
 	"github.com/Azure/go-autorest/autorest/azure/auth"
 	//"github.com/Azure/go-autorest/autorest/to"
 
-	"azure-key-vault-agent/config"
+	"github.com/chrisjohnson/azure-key-vault-agent/config"
 )
 
 func getVaultsClient() keyvault.VaultsClient {

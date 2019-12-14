@@ -11,7 +11,7 @@ import (
 	"strings"
 	"log"
 
-	"azure-key-vault-agent/config"
+	"github.com/chrisjohnson/azure-key-vault-agent/config"
 
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"

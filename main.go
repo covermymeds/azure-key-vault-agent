@@ -4,8 +4,8 @@ import (
 	"log"
 	"flag"
 
-	"azure-key-vault-agent/config"
-	"azure-key-vault-agent/keys"
+	"github.com/chrisjohnson/azure-key-vault-agent/config"
+	"github.com/chrisjohnson/azure-key-vault-agent/keys"
 )
 
 func init() {

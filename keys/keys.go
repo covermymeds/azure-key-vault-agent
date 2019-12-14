@@ -6,9 +6,9 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/2016-10-01/keyvault"
 
-	"azure-key-vault-agent/iam"
-	"azure-key-vault-agent/config"
-	"azure-key-vault-agent/vaults"
+	"github.com/chrisjohnson/azure-key-vault-agent/iam"
+	"github.com/chrisjohnson/azure-key-vault-agent/config"
+	"github.com/chrisjohnson/azure-key-vault-agent/vaults"
 )
 func getKeysClient() keyvault.BaseClient {
 	keyClient := keyvault.New()
