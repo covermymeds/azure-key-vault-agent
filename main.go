@@ -1,8 +1,8 @@
 package main
 
 import (
-	"log"
 	"flag"
+	"log"
 
 	"github.com/chrisjohnson/azure-key-vault-agent/config"
 	"github.com/chrisjohnson/azure-key-vault-agent/keys"
@@ -23,8 +23,8 @@ func init() {
 }
 
 func main() {
-	// secret name, version (can leave blank for "latest")
-	secret, err := keys.GetSecret("cjohnson-kv", "password", "8f1e2267024a4dacb81b14aa33b8f084")
+	// vault url, secret name, version (can leave blank for "latest")
+	secret, err := keys.GetSecret("https://cjohnson-kv.vault.azure.net/", "password", "8f1e2267024a4dacb81b14aa33b8f084")
 	if err != nil {
 		log.Fatalf("failed to get secret: %v\n", err.Error())
 	}

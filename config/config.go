@@ -17,7 +17,6 @@ var (
 	clientID               string
 	clientSecret           string
 	tenantID               string
-	resourceGroupName      string
 	subscriptionID         string
 	locationDefault        string
 	authorizationServerURL string
@@ -48,11 +47,6 @@ func TenantID() string {
 // SubscriptionID is a target subscription for Azure resources.
 func SubscriptionID() string {
 	return subscriptionID
-}
-
-// ResourceGroupName is the target resource group for Azure resources.
-func ResourceGroupName() string {
-	return resourceGroupName
 }
 
 // deprecated: use DefaultLocation() instead

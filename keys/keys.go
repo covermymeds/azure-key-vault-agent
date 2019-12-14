@@ -6,10 +6,10 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/2016-10-01/keyvault"
 
-	"github.com/chrisjohnson/azure-key-vault-agent/iam"
 	"github.com/chrisjohnson/azure-key-vault-agent/config"
-	"github.com/chrisjohnson/azure-key-vault-agent/vaults"
+	"github.com/chrisjohnson/azure-key-vault-agent/iam"
 )
+
 func getKeysClient() keyvault.BaseClient {
 	keyClient := keyvault.New()
 	a, err := iam.GetKeyvaultAuthorizer()
@@ -21,15 +21,8 @@ func getKeysClient() keyvault.BaseClient {
 	return keyClient
 }
 
-func GetSecret(vaultName string, secretName string, secretVersion string) (result string, err error) {
+func GetSecret(vaultBaseURL string, secretName string, secretVersion string) (result string, err error) {
 	keysClient := getKeysClient()
-
-	vault, err := vaults.GetVault(context.Background(), vaultName)
-	if err != nil {
-		log.Fatalf("Failure getting vault: %v\n", err.Error())
-	}
-
-	vaultBaseURL := *vault.Properties.VaultURI
 
 	secret, err := keysClient.GetSecret(context.Background(), vaultBaseURL, secretName, secretVersion)
 	if err != nil {

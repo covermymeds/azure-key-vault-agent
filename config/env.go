@@ -60,11 +60,5 @@ func ParseEnvironment() error {
 		return fmt.Errorf("expected env vars not provided: %s\n", err)
 	}
 
-	// resourceGroupName
-	resourceGroupName, err = envy.MustGet("AZURE_RESOURCE_GROUP_NAME")
-	if err != nil {
-		return fmt.Errorf("expected env vars not provided: %s\n", err)
-	}
-
 	return nil
 }

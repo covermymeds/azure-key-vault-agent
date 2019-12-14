@@ -7,7 +7,6 @@ AZURE_TENANT_ID=<tenant id>
 AZURE_SUBSCRIPTION_ID=<subscription id>
 AZURE_CLIENT_ID=<SPN name including http>
 AZURE_CLIENT_SECRET=<SPN password>
-AZURE_RESOURCE_GROUP_NAME=<resource group where the vault is located>
 ```
 
 Then run:
