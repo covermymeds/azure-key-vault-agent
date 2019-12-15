@@ -60,18 +60,27 @@ func GetSecrets(vaultBaseURL string) (results []string, err error) {
 	client := getClient()
 
 	max := int32(25)
-	slrp, err := client.GetSecrets(context.Background(), vaultBaseURL, &max)
+	pages, err := client.GetSecrets(context.Background(), vaultBaseURL, &max)
 	if err != nil {
 		log.Fatalf("Error getting secret: %v\n", err.Error())
 	}
 
-	for _, value := range slrp.Values() {
-		secretURL := *value.ID
-		secret, err := GetSecretByURL(secretURL)
-		if err != nil {
-			log.Fatalf("Error loading secret contents: %v\n", err.Error())
+	for {
+		for _, value := range pages.Values() {
+			secretURL := *value.ID
+			secret, err := GetSecretByURL(secretURL)
+			if err != nil {
+				log.Fatalf("Error loading secret contents: %v\n", err.Error())
+			}
+
+			results = append(results, secret)
 		}
-		results = append(results, secret)
+
+		if pages.NotDone() {
+			pages.Next()
+		} else {
+			break
+		}
 	}
 
 	return
