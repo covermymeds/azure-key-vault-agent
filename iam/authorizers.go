@@ -9,7 +9,6 @@ import (
 	"fmt"
 	"net/url"
 	"strings"
-	"log"
 
 	"github.com/chrisjohnson/azure-key-vault-agent/config"
 
@@ -114,7 +113,6 @@ func GetGraphAuthorizer() (autorest.Authorizer, error) {
 // Manager.
 func GetKeyvaultAuthorizer() (autorest.Authorizer, error) {
 	if keyvaultAuthorizer != nil {
-		log.Println("Already exists")
 		return keyvaultAuthorizer, nil
 	}
 

@@ -10,26 +10,26 @@ import (
 	"github.com/chrisjohnson/azure-key-vault-agent/iam"
 )
 
-func getKeysClient() keyvault.BaseClient {
-	keyClient := keyvault.New()
+func getClient() keyvault.BaseClient {
+	client := keyvault.New()
 	a, err := iam.GetKeyvaultAuthorizer()
 	if err != nil {
-		log.Fatalf(err.Error())
+		log.Fatalf("Error authorizing: %v\n", err.Error())
 	}
-	keyClient.Authorizer = a
-	keyClient.AddToUserAgent(config.UserAgent())
-	return keyClient
+	client.Authorizer = a
+	client.AddToUserAgent(config.UserAgent())
+	return client
 }
 
-func GetSecret(vaultBaseURL string, secretName string, secretVersion string) (result string, err error) {
-	keysClient := getKeysClient()
+func GetKey(vaultBaseURL string, keyName string, keyVersion string) (result keyvault.JSONWebKey, err error) {
+	client := getClient()
 
-	secret, err := keysClient.GetSecret(context.Background(), vaultBaseURL, secretName, secretVersion)
+	key, err := client.GetKey(context.Background(), vaultBaseURL, keyName, keyVersion)
 	if err != nil {
-		log.Fatalf("Error getting secret: %v\n", err.Error())
+		log.Fatalf("Error getting key: %v\n", err.Error())
 	}
 
-	result = *secret.Value
+	result = *key.Key
 
 	return
 }
