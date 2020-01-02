@@ -18,3 +18,5 @@ Then run:
 To track tool deps explicitly:
 
 https://github.com/golang/go/wiki/Modules#how-can-i-track-tool-dependencies-for-a-module
+
+Add `-dry` for a single run that outputs to stdout
