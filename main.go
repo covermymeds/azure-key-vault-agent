@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"log"
+	"time"
 
-	"github.com/chrisjohnson/azure-key-vault-agent/certs"
 	"github.com/chrisjohnson/azure-key-vault-agent/config"
-	"github.com/chrisjohnson/azure-key-vault-agent/secrets"
+	"github.com/chrisjohnson/azure-key-vault-agent/sink"
+	"github.com/chrisjohnson/azure-key-vault-agent/worker"
 )
 
 func init() {
@@ -24,37 +26,21 @@ func init() {
 }
 
 func main() {
-	// vault url, secret name, version (can leave blank for "latest")
-	secret, err := secrets.GetSecret("https://cjohnson-kv.vault.azure.net/", "password", "8f1e2267024a4dacb81b14aa33b8f084")
-	if err != nil {
-		log.Fatalf("failed to get secret: %v\n", err.Error())
-	}
-	log.Printf("Got secret password: %v\n", secret)
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	// TODO: Parse config once to determine these
+	// TODO: Set up a file watch on the config that parses, cancels the existing workers, and starts a new set
 
-	secrets, listErr := secrets.GetSecrets("https://cjohnson-kv.vault.azure.net/")
-	if listErr != nil {
-		log.Fatalf("failed to get list of secrets: %v\n", listErr.Error())
-	}
-	log.Println("Getting all secrets")
-	for _, value := range secrets {
-		log.Println(value)
-	}
-	log.Println("Done")
+	cfg1 := sink.SinkConfig{Name: "password", Frequency: 1, Type: sink.SecretType, VaultBaseURL: "https://cjohnson-kv.vault.azure.net/"}
+	cfg2 := sink.SinkConfig{Name: "cjohnson-test", Frequency: 1, Type: sink.CertType, VaultBaseURL: "https://cjohnson-kv.vault.azure.net/"}
+	//cfg3 := sink.SinkConfig{Name: "C", Frequency: 1, Type: worker.CertType, VaultBaseURL: "https://cjohnson-kv.vault.azure.net/"}
 
-	// vault url, cert name, version (can leave blank for "latest")
-	cert, err := certs.GetCert("https://cjohnson-kv.vault.azure.net/", "cjohnson-test", "4cffd52057214a0799287e2ea905ffd9")
-	if err != nil {
-		log.Fatalf("failed to get cert: %v\n", err.Error())
-	}
-	log.Printf("Got cert cjohnson-test: %v\n", cert)
+	go worker.Worker(ctx, cfg1)
+	go worker.Worker(ctx, cfg2)
+	//go worker.Worker(ctx, cfg3)
 
-	certs, listErr := certs.GetCerts("https://cjohnson-kv.vault.azure.net/")
-	if listErr != nil {
-		log.Fatalf("failed to get list of certs: %v\n", listErr.Error())
-	}
-	log.Println("Getting all certs")
-	for _, value := range certs {
-		log.Println(value)
-	}
-	log.Println("Done")
+	// Run for 15 seconds, then stop
+	time.Sleep(15 * time.Second)
+	log.Println("Shutting down")
+	cancel()
 }
