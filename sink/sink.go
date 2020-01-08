@@ -4,16 +4,16 @@ import (
 	"time"
 )
 
-type SinkType int
+type SinkKind string
 
 const (
-	CertType SinkType = iota
-	KeyType
-	SecretType
+	CertKind   SinkKind = "cert"
+	KeyKind    SinkKind = "key"
+	SecretKind SinkKind = "secret"
 )
 
 type SinkConfig struct {
-	Type         SinkType      `json:"type,omitempty"`
+	Kind         SinkKind      `json:"kind,omitempty"`
 	VaultBaseURL string        `json:"vaultBaseURL,omitempty"`
 	Name         string        `json:"name,omitempty"`
 	Version      string        `json:"version,omitempty"`
@@ -25,10 +25,10 @@ type SinkConfig struct {
 	PostChange   string        `json:"postChange,omitempty"`
 
 	/*
-	   - type: cert
+	   - kind: cert
 	     path: /etc/nginx/certs/foo.cert
 	     refresh: 5s
-	     vaultName: cjohnson-kv-test
+	     vaultBaseURL: https://cjohnson-kv.vault.azure.net/
 	     name: cjohnson-test-cert
 	     postChange: service nginx restart
 	     preChange: who knows

@@ -14,35 +14,46 @@ func Worker(ctx context.Context, cfg sink.SinkConfig) {
 	for {
 		select {
 		case <-time.After(cfg.Frequency * time.Second):
-			switch cfg.Type {
-			case sink.CertType:
-				cert, err := certs.GetCert(cfg.VaultBaseURL, cfg.Name, cfg.Version)
-				if err != nil {
-					log.Printf("Failed to get cert: %v\n", err.Error())
-				}
-				log.Printf("Got cert %v: %v\n", cfg.Name, cert)
-				// TODO: Send to file writer, along with any template details
-				// TODO: Trigger pre and post change hooks
-				// TODO: Determine what constitutes a "change"
-
-			case sink.SecretType:
-				secret, err := secrets.GetSecret(cfg.VaultBaseURL, cfg.Name, cfg.Version)
-				if err != nil {
-					log.Printf("Failed to get secret: %v\n", err.Error())
-				}
-				log.Printf("Got secret %v: %v\n", cfg.Name, secret)
-
-			case sink.KeyType:
-				log.Fatalf("Not implemented yet")
-
+			err := fetch(ctx, cfg)
+			if err != nil {
+				// TODO: If frequency > 1m, trigger a retry
+				log.Printf("Failed to get resource: %v\n", err.Error())
 			}
+
+			//write(ctx, cfg)
 		case <-ctx.Done():
 			return
 		}
 	}
 }
 
-func poll(ctx context.Context, cfg sink.SinkConfig) {
+func fetch(ctx context.Context, cfg sink.SinkConfig) (err error) {
+	switch cfg.Kind {
+	case sink.CertKind:
+		cert, certErr := certs.GetCert(cfg.VaultBaseURL, cfg.Name, cfg.Version)
+		if certErr != nil {
+			err = certErr
+		}
+		log.Printf("Got cert %v: %v\n", cfg.Name, cert)
+		// TODO: Send to file writer, along with any template details
+		// TODO: Trigger pre and post change hooks
+		// TODO: Determine what constitutes a "change"
+		// TODO: retry/backoff
+		// TODO: If freq < 1m, just ignore failures, otherwise create an explicit retry
+
+	case sink.SecretKind:
+		secret, secretErr := secrets.GetSecret(cfg.VaultBaseURL, cfg.Name, cfg.Version)
+		if secretErr != nil {
+			err = secretErr
+		}
+		log.Printf("Got secret %v: %v\n", cfg.Name, secret)
+
+	case sink.KeyKind:
+		log.Fatalf("Not implemented yet")
+
+	}
+
+	return
 }
 
 /*
