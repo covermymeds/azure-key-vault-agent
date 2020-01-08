@@ -12,4 +12,5 @@ require (
 	github.com/gobuffalo/envy v1.8.1
 	github.com/marstr/randname v0.0.0-20181206212954-d5b0f288ab8c
 	github.com/satori/go.uuid v1.2.0 // indirect
+	gopkg.in/yaml.v2 v2.2.7
 )

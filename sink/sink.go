@@ -13,16 +13,16 @@ const (
 )
 
 type SinkConfig struct {
-	Kind         SinkKind      `json:"kind,omitempty"`
-	VaultBaseURL string        `json:"vaultBaseURL,omitempty"`
-	Name         string        `json:"name,omitempty"`
-	Version      string        `json:"version,omitempty"`
-	Path         string        `json:"path,omitempty"`
-	Frequency    time.Duration `json:"value,omitempty"`
-	Template     string        `json:"template,omitempty"`
-	TemplatePath string        `json:"templatePath,omitempty"`
-	PreChange    string        `json:"preChange,omitempty"`
-	PostChange   string        `json:"postChange,omitempty"`
+	Kind         SinkKind      `yaml:"kind,omitempty"`
+	VaultBaseURL string        `yaml:"vaultBaseURL,omitempty"`
+	Name         string        `yaml:"name,omitempty"`
+	Version      string        `yaml:"version,omitempty"`
+	Path         string        `yaml:"path,omitempty"`
+	Frequency    time.Duration `yaml:"value,omitempty"`
+	Template     string        `yaml:"template,omitempty"`
+	TemplatePath string        `yaml:"templatePath,omitempty"`
+	PreChange    string        `yaml:"preChange,omitempty"`
+	PostChange   string        `yaml:"postChange,omitempty"`
 
 	/*
 	   - kind: cert
