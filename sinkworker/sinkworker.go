@@ -22,6 +22,7 @@ func Worker(ctx context.Context, cfg sink.SinkConfig) {
 
 			//write(ctx, cfg)
 		case <-ctx.Done():
+			log.Println("Shutting down worker for: ", cfg.Name)
 			return
 		}
 	}
