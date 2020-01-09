@@ -11,6 +11,7 @@ import (
 )
 
 func Worker(ctx context.Context, cfg sink.SinkConfig) {
+	log.Println("Starting worker for: ", cfg.Name, "with refresh: ",cfg.Frequency)
 	for {
 		select {
 		case <-time.After(cfg.Frequency * time.Second):
@@ -22,12 +23,14 @@ func Worker(ctx context.Context, cfg sink.SinkConfig) {
 
 			//write(ctx, cfg)
 		case <-ctx.Done():
+			log.Println("Shutting down worker for: ", cfg.Name)
 			return
 		}
 	}
 }
 
 func fetch(ctx context.Context, cfg sink.SinkConfig) (err error) {
+	log.Println("Fetching:", cfg.Name)
 	switch cfg.Kind {
 	case sink.CertKind:
 		cert, certErr := certs.GetCert(cfg.VaultBaseURL, cfg.Name, cfg.Version)
