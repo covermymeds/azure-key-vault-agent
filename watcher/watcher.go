@@ -8,7 +8,7 @@ import (
 	"log"
 )
 
-func AkvaWatcher(path string) {
+func ConfigWatcher(path string) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
@@ -35,7 +35,7 @@ func parseAndStartWorkers(path string) context.CancelFunc {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// parse config file and start workers
-	sinkConfigs := config.ParseAkvaConfig(path)
+	sinkConfigs := config.ParseConfig(path)
 	for _, sinkConfig := range sinkConfigs {
 		go sinkworker.Worker(ctx, sinkConfig)
 	}

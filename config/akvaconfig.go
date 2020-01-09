@@ -11,7 +11,7 @@ type AkvaConfig struct {
 	Sinks []sink.SinkConfig `yaml: "sinks, omitempty"`
 }
 
-func ParseAkvaConfig(path string) []sink.SinkConfig{
+func ParseConfig(path string) []sink.SinkConfig{
 	ac := AkvaConfig{}
 	data, err := ioutil.ReadFile(path)
 

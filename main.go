@@ -22,7 +22,7 @@ func init() {
 }
 
 func main() {
-	watcher.AkvaWatcher("akva.yaml")
+	watcher.ConfigWatcher("akva.yaml")
 
 	/*
 	cfg1 := sink.SinkConfig{Name: "username", Frequency: 1, Kind: sink.SecretKind, VaultBaseURL: "https://cjohnson-kv.vault.azure.net/"}

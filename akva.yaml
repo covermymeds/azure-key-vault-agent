@@ -1,7 +1,7 @@
 sinks:
   - type: cert
     path: /etc/nginx/certs/foo.cert
-    refresh: 5s
+    frequency: 5s
     vaultName: cjohnson-kv-test
     name: cjohnson-test-cert
     postChange: service nginx restart
@@ -9,9 +9,10 @@ sinks:
     version: latest # or specific version number
   - type: cert
     path: /etc/nginx/certs/bar.cert
-    refresh: 5s
+    frequency: 5s
     vaultName: cjohnson-kv-test
     name: cjohnson-test-cert-2
     postChange: service nginx restart
     preChange: who knows
     version: latest # or specific version number
+
