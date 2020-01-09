@@ -13,30 +13,33 @@ func ConfigWatcher(path string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer watcher.Close()
 
 	done := make(chan bool)
 
-	//Parse config and start workers.  Get the cancel function back so it can be passed to the file configwatcher
+	// Parse config and start workers.  Get the cancel function back so it can be passed to the file configwatcher
 	cancel := parseAndStartWorkers(path)
+	defer cancel()
 
-	//Now that the workers have been started, watch the config file and bounce them if changes happen
+	// Now that the workers have been started, watch the config file and bounce them if changes happen
 	go doWatch(watcher, cancel, path)
+
+	// If something goes wrong along the way, close the watcher
+	defer watcher.Close()
 
 	err = watcher.Add(path)
 	if err != nil {
 		log.Fatal(err)
 	}
-	<-done //block until done
+	<-done // Block until done
 }
 
 func parseAndStartWorkers(path string) context.CancelFunc {
-	// create background context for workers
+	// Create background context for workers
 	ctx, cancel := context.WithCancel(context.Background())
-	// if something goes wrong, cancel the set of workers
+	// If something goes wrong, cancel the set of workers
 	defer cancel()
 
-	// parse config file and start workers
+	// Parse config file and start workers
 	sinkConfigs := configparser.ParseConfig(path)
 	for _, sinkConfig := range sinkConfigs {
 		go sinkworker.Worker(ctx, sinkConfig)
