@@ -11,22 +11,66 @@ import (
 )
 
 func Worker(ctx context.Context, cfg sink.SinkConfig) {
-	log.Println("Starting worker for: ", cfg.Name, "with refresh: ",cfg.Frequency)
-	for {
-		select {
-		case <-time.After(cfg.Frequency * time.Second):
-			err := fetch(ctx, cfg)
-			if err != nil {
-				// TODO: If frequency > 1m, trigger a retry
-				log.Printf("Failed to get resource: %v\n", err.Error())
-			}
+	log.Println("Starting worker for: ", cfg.Name, "with refresh: ", cfg.Frequency)
 
-			//write(ctx, cfg)
+	interval := cfg.Frequency
+	ticker := time.NewTicker(time.Duration(interval) * time.Second)
+	retry := false
+
+	process(ctx, cfg)
+	err := process(ctx, cfg)
+	if err != nil {
+		log.Printf("Failed to get resource: %v\n", err.Error())
+	}
+
+	for {
+		log.Printf("Polling for worker %v\n", cfg.Name)
+		select {
 		case <-ctx.Done():
+			// The main thread has cancelled the worker
 			log.Println("Shutting down worker for: ", cfg.Name)
 			return
+		case <-ticker.C:
+			err := process(ctx, cfg)
+			if err != nil {
+				if cfg.Frequency > 60 {
+					// For long frequencies, we should set up an explicit retry
+					// Shorter frequencies, we can just wait for the next natural tick
+					if retry {
+						// Double the next retry interval
+						interval = interval * 2
+						ticker = time.NewTicker(time.Duration(interval) * time.Second)
+					} else {
+						// First failure, reset interval to 1 and enable retry logic
+						interval = 1
+						retry = true
+					}
+				}
+				log.Printf("Failed to get resource: %v\n", err.Error())
+			} else {
+				// Reset the ticker once we've got a good result
+				if cfg.Frequency > 60 {
+					retry = false
+					interval = cfg.Frequency
+					ticker = time.NewTicker(time.Duration(interval) * time.Second)
+				}
+			}
 		}
 	}
+}
+
+func process(ctx context.Context, cfg sink.SinkConfig) (err error) {
+	err = fetch(ctx, cfg)
+	if err == nil {
+		return
+	}
+
+	err = write(ctx, cfg)
+	if err == nil {
+		return
+	}
+
+	return
 }
 
 func fetch(ctx context.Context, cfg sink.SinkConfig) (err error) {
@@ -54,8 +98,15 @@ func fetch(ctx context.Context, cfg sink.SinkConfig) (err error) {
 	case sink.KeyKind:
 		log.Fatalf("Not implemented yet")
 
+	default:
+		log.Fatalf("Invalid sink kind: %v\n", cfg.Kind)
 	}
 
+	return
+}
+
+func write(ctx context.Context, cfg sink.SinkConfig) (err error) {
+	err = nil
 	return
 }
 

@@ -33,6 +33,8 @@ func ConfigWatcher(path string) {
 func parseAndStartWorkers(path string) context.CancelFunc {
 	// create background context for workers
 	ctx, cancel := context.WithCancel(context.Background())
+	// if something goes wrong, cancel the set of workers
+	defer cancel()
 
 	// parse config file and start workers
 	sinkConfigs := configparser.ParseConfig(path)
