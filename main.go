@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"log"
 	"time"
 
@@ -28,7 +29,10 @@ func init() {
 func main() {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
-	// TODO: Parse config once to determine these
+	// get the sinks from akva.yaml
+	sinks := config.ParseAkvaConfig("akva.yaml")
+	fmt.Println(sinks)
+	fmt.Println(sinks[0].PreChange)
 	// TODO: Set up a file watch on the config that parses, cancels the existing workers, and starts a new set
 
 	cfg1 := sink.SinkConfig{Name: "username", Frequency: 1, Kind: sink.SecretKind, VaultBaseURL: "https://cjohnson-kv.vault.azure.net/"}
