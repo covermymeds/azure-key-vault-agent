@@ -33,7 +33,6 @@ func AkvaWatcher(path string) {
 func parseAndStartWorkers(path string) context.CancelFunc {
 	// create background context for workers
 	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
 
 	// parse config file and start workers
 	sinkConfigs := config.ParseAkvaConfig(path)

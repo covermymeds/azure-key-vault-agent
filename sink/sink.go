@@ -18,7 +18,7 @@ type SinkConfig struct {
 	Name         string        `yaml:"name,omitempty"`
 	Version      string        `yaml:"version,omitempty"`
 	Path         string        `yaml:"path,omitempty"`
-	Frequency    time.Duration `yaml:"value,omitempty"`
+	Frequency    time.Duration `yaml:"frequency,omitempty"`
 	Template     string        `yaml:"template,omitempty"`
 	TemplatePath string        `yaml:"templatePath,omitempty"`
 	PreChange    string        `yaml:"preChange,omitempty"`

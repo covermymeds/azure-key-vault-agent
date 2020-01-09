@@ -11,7 +11,7 @@ import (
 )
 
 func Worker(ctx context.Context, cfg sink.SinkConfig) {
-	log.Println("Starting worker for: ", cfg.Name)
+	log.Println("Starting worker for: ", cfg.Name, "with refresh: ",cfg.Frequency)
 	for {
 		select {
 		case <-time.After(cfg.Frequency * time.Second):
