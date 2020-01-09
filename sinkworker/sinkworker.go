@@ -30,6 +30,7 @@ func Worker(ctx context.Context, cfg sink.SinkConfig) {
 }
 
 func fetch(ctx context.Context, cfg sink.SinkConfig) (err error) {
+	log.Println("Fetching:", cfg.Name)
 	switch cfg.Kind {
 	case sink.CertKind:
 		cert, certErr := certs.GetCert(cfg.VaultBaseURL, cfg.Name, cfg.Version)
