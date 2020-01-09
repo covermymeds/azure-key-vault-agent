@@ -1,10 +1,9 @@
 sinks:
-  - type: cert
-    path: /etc/nginx/certs/foo.cert
-    frequency: 5s
-    vaultName: https://cmmkeyvaulttest.vault.azure.net/
-    name: cjohnson-test-cert
-    postChange: service nginx restart
-    preChange: who knows
-    version: latest
-
+  - kind: secret
+    path: /tmp/whatever
+    frequency: 5
+    vaultBaseURL: https://cjohnson-kv.vault.azure.net/
+    name: password
+    postChange: echo goodbye
+    preChange: echo hello
+    #version: 1a131058e8934267ae695703367c485d
