@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"github.com/chrisjohnson/azure-key-vault-agent/config"
-	"github.com/chrisjohnson/azure-key-vault-agent/watcher"
+	"github.com/chrisjohnson/azure-key-vault-agent/configwatcher"
 	"log"
 )
 
@@ -22,7 +22,7 @@ func init() {
 }
 
 func main() {
-	watcher.ConfigWatcher("akva.yaml")
+	configwatcher.ConfigWatcher("akva.yaml")
 
 	/*
 	cfg1 := sink.SinkConfig{Name: "username", Frequency: 1, Kind: sink.SecretKind, VaultBaseURL: "https://cjohnson-kv.vault.azure.net/"}

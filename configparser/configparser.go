@@ -1,4 +1,4 @@
-package config
+package configparser
 
 import (
 	"github.com/chrisjohnson/azure-key-vault-agent/sink"
@@ -7,12 +7,12 @@ import (
 	"log"
 )
 
-type AkvaConfig struct {
+type Config struct {
 	Sinks []sink.SinkConfig `yaml: "sinks, omitempty"`
 }
 
 func ParseConfig(path string) []sink.SinkConfig{
-	ac := AkvaConfig{}
+	ac := Config{}
 	data, err := ioutil.ReadFile(path)
 
 	if err != nil {

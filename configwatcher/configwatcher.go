@@ -1,8 +1,8 @@
-package watcher
+package configwatcher
 
 import (
 	"context"
-	"github.com/chrisjohnson/azure-key-vault-agent/config"
+	"github.com/chrisjohnson/azure-key-vault-agent/configparser"
 	"github.com/chrisjohnson/azure-key-vault-agent/sinkworker"
 	"github.com/fsnotify/fsnotify"
 	"log"
@@ -17,7 +17,7 @@ func ConfigWatcher(path string) {
 
 	done := make(chan bool)
 
-	//Parse config and start workers.  Get the cancel function back so it can be passed to the file watcher
+	//Parse config and start workers.  Get the cancel function back so it can be passed to the file configwatcher
 	cancel := parseAndStartWorkers(path)
 
 	//Now that the workers have been started, watch the config file and bounce them if changes happen
@@ -35,7 +35,7 @@ func parseAndStartWorkers(path string) context.CancelFunc {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// parse config file and start workers
-	sinkConfigs := config.ParseConfig(path)
+	sinkConfigs := configparser.ParseConfig(path)
 	for _, sinkConfig := range sinkConfigs {
 		go sinkworker.Worker(ctx, sinkConfig)
 	}
