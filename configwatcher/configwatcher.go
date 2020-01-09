@@ -52,7 +52,7 @@ func doWatch(watcher *fsnotify.Watcher, cancel context.CancelFunc, path string) 
 		select {
 		case event, ok := <-watcher.Events:
 			if !ok {
-				return
+				continue
 			}
 			log.Println("event:", event)
 			if event.Op&fsnotify.Write == fsnotify.Write {
@@ -63,7 +63,7 @@ func doWatch(watcher *fsnotify.Watcher, cancel context.CancelFunc, path string) 
 			}
 		case err, ok := <-watcher.Errors:
 			if !ok {
-				return
+				continue
 			}
 			log.Println("error:", err)
 		}
