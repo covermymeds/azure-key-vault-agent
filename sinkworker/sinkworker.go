@@ -11,26 +11,25 @@ import (
 )
 
 func Worker(ctx context.Context, cfg sink.SinkConfig) {
-	log.Println("Starting worker for: ", cfg.Name, "with refresh: ", cfg.Frequency)
-
-	interval := cfg.Frequency
-	ticker := time.NewTicker(time.Duration(interval) * time.Second)
 	retry := false
+	interval := time.Duration(cfg.Frequency * time.Second)
+	ticker := time.NewTicker(interval)
 
-	process(ctx, cfg)
+	log.Println("Starting worker for: ", cfg.Name, "with refresh: ", interval)
+
 	err := process(ctx, cfg)
 	if err != nil {
 		log.Printf("Failed to get resource: %v\n", err.Error())
 	}
 
 	for {
-		log.Printf("Polling for worker %v\n", cfg.Name)
 		select {
 		case <-ctx.Done():
 			// The main thread has cancelled the worker
 			log.Println("Shutting down worker for: ", cfg.Name)
 			return
 		case <-ticker.C:
+			log.Printf("Polling for worker %v\n", cfg.Name)
 			err := process(ctx, cfg)
 			if err != nil {
 				if cfg.Frequency > 60 {
@@ -38,20 +37,23 @@ func Worker(ctx context.Context, cfg sink.SinkConfig) {
 					// Shorter frequencies, we can just wait for the next natural tick
 					if retry {
 						// Double the next retry interval
-						interval = interval * 2
-						ticker = time.NewTicker(time.Duration(interval) * time.Second)
+						interval = time.Duration(interval * 2)
+						ticker = time.NewTicker(interval)
+						log.Printf("Failed to get resource %v, backing off and will retry in %v\n%v\n", cfg.Name, interval, err.Error())
 					} else {
-						// First failure, reset interval to 1 and enable retry logic
-						interval = 1
+						// First failure, reset interval to 30 and enable retry logic
+						interval = 30
 						retry = true
+						log.Printf("Failed to get resource %v, will retry in %v\n%v\n", cfg.Name, interval, err.Error())
 					}
+				} else {
+					log.Printf("Failed to get resource: %v\n", err.Error())
 				}
-				log.Printf("Failed to get resource: %v\n", err.Error())
 			} else {
 				// Reset the ticker once we've got a good result
 				if cfg.Frequency > 60 {
 					retry = false
-					interval = cfg.Frequency
+					interval = cfg.Frequency * time.Second
 					ticker = time.NewTicker(time.Duration(interval) * time.Second)
 				}
 			}
@@ -74,7 +76,6 @@ func process(ctx context.Context, cfg sink.SinkConfig) (err error) {
 }
 
 func fetch(ctx context.Context, cfg sink.SinkConfig) (err error) {
-	log.Println("Fetching:", cfg.Name)
 	switch cfg.Kind {
 	case sink.CertKind:
 		cert, certErr := certs.GetCert(cfg.VaultBaseURL, cfg.Name, cfg.Version)

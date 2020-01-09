@@ -22,5 +22,5 @@ func init() {
 }
 
 func main() {
-	configwatcher.ConfigWatcher("akva.yaml")
+	configwatcher.Watcher("akva.yaml")
 }

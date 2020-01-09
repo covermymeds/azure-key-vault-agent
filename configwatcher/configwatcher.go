@@ -8,11 +8,14 @@ import (
 	"log"
 )
 
-func ConfigWatcher(path string) {
+func Watcher(path string) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	// If something goes wrong along the way, close the watcher
+	defer watcher.Close()
 
 	done := make(chan bool)
 
@@ -22,9 +25,6 @@ func ConfigWatcher(path string) {
 
 	// Now that the workers have been started, watch the config file and bounce them if changes happen
 	go doWatch(watcher, cancel, path)
-
-	// If something goes wrong along the way, close the watcher
-	defer watcher.Close()
 
 	err = watcher.Add(path)
 	if err != nil {
@@ -36,8 +36,6 @@ func ConfigWatcher(path string) {
 func parseAndStartWorkers(path string) context.CancelFunc {
 	// Create background context for workers
 	ctx, cancel := context.WithCancel(context.Background())
-	// If something goes wrong, cancel the set of workers
-	defer cancel()
 
 	// Parse config file and start workers
 	sinkConfigs := configparser.ParseConfig(path)
@@ -57,7 +55,7 @@ func doWatch(watcher *fsnotify.Watcher, cancel context.CancelFunc, path string) 
 			log.Println("event:", event)
 			if event.Op&fsnotify.Write == fsnotify.Write {
 				log.Println("modified file:", event.Name)
-				// kill workers and start new ones
+				// Kill workers and start new ones
 				cancel()
 				cancel = parseAndStartWorkers(path)
 			}
