@@ -8,14 +8,24 @@ import (
 	"github.com/chrisjohnson/azure-key-vault-agent/certs"
 	"github.com/chrisjohnson/azure-key-vault-agent/secrets"
 	"github.com/chrisjohnson/azure-key-vault-agent/sink"
+
+	"github.com/jpillora/backoff"
 )
 
-func Worker(ctx context.Context, cfg sink.SinkConfig) {
-	retry := false
-	interval := time.Duration(cfg.Frequency * time.Second)
-	ticker := time.NewTicker(interval)
+const RetryBreakPoint = 60
 
-	log.Println("Starting worker for: ", cfg.Name, "with refresh: ", interval)
+func Worker(ctx context.Context, cfg sink.SinkConfig) {
+	b := &backoff.Backoff{
+		Min:    cfg.Frequency * time.Second,
+		Max:    cfg.Frequency * 10 * time.Second,
+		Factor: 2,
+		Jitter: true,
+	}
+
+	d := b.Duration()
+	ticker := time.NewTicker(d)
+
+	log.Printf("Starting worker for %v with refresh %v\n", cfg.Name, d)
 
 	err := process(ctx, cfg)
 	if err != nil {
@@ -32,29 +42,23 @@ func Worker(ctx context.Context, cfg sink.SinkConfig) {
 			log.Printf("Polling for worker %v\n", cfg.Name)
 			err := process(ctx, cfg)
 			if err != nil {
-				if cfg.Frequency > 60 {
+				if cfg.Frequency > RetryBreakPoint {
 					// For long frequencies, we should set up an explicit retry
-					// Shorter frequencies, we can just wait for the next natural tick
-					if retry {
-						// Double the next retry interval
-						interval = time.Duration(interval * 2)
-						ticker = time.NewTicker(interval)
-						log.Printf("Failed to get resource %v, backing off and will retry in %v\n%v\n", cfg.Name, interval, err.Error())
-					} else {
-						// First failure, reset interval to 30 and enable retry logic
-						interval = 30
-						retry = true
-						log.Printf("Failed to get resource %v, will retry in %v\n%v\n", cfg.Name, interval, err.Error())
-					}
+					d := b.Duration()
+					ticker = time.NewTicker(d)
+					log.Println(err)
+					log.Printf("Failed to get resource %v, will retry in %v\n", cfg.Name, d)
 				} else {
+					// For short frequencies, we can just wait for the next natural tick
 					log.Printf("Failed to get resource: %v\n", err.Error())
 				}
 			} else {
 				// Reset the ticker once we've got a good result
-				if cfg.Frequency > 60 {
-					retry = false
-					interval = cfg.Frequency * time.Second
-					ticker = time.NewTicker(time.Duration(interval) * time.Second)
+				if cfg.Frequency > RetryBreakPoint {
+					b.Reset()
+					d := b.Duration()
+					ticker = time.NewTicker(d)
+					log.Printf("Success for resource %v, will try next in %v\n", cfg.Name, d)
 				}
 			}
 		}
@@ -67,10 +71,12 @@ func process(ctx context.Context, cfg sink.SinkConfig) (err error) {
 		return
 	}
 
-	err = write(ctx, cfg)
-	if err == nil {
-		return
-	}
+	/*
+		err = write(ctx, cfg)
+		if err == nil {
+			return
+		}
+	*/
 
 	return
 }
@@ -81,8 +87,9 @@ func fetch(ctx context.Context, cfg sink.SinkConfig) (err error) {
 		cert, certErr := certs.GetCert(cfg.VaultBaseURL, cfg.Name, cfg.Version)
 		if certErr != nil {
 			err = certErr
+		} else {
+			log.Printf("Got cert %v: %v\n", cfg.Name, cert)
 		}
-		log.Printf("Got cert %v: %v\n", cfg.Name, cert)
 		// TODO: Send to file writer, along with any template details
 		// TODO: Trigger pre and post change hooks
 		// TODO: Determine what constitutes a "change"
@@ -93,8 +100,9 @@ func fetch(ctx context.Context, cfg sink.SinkConfig) (err error) {
 		secret, secretErr := secrets.GetSecret(cfg.VaultBaseURL, cfg.Name, cfg.Version)
 		if secretErr != nil {
 			err = secretErr
+		} else {
+			log.Printf("Got secret %v: %v\n", cfg.Name, secret)
 		}
-		log.Printf("Got secret %v: %v\n", cfg.Name, secret)
 
 	case sink.KeyKind:
 		log.Fatalf("Not implemented yet")
