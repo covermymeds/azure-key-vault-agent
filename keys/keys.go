@@ -17,7 +17,7 @@ func getClient() keyvault.BaseClient {
 	client := keyvault.New()
 	a, err := iam.GetKeyvaultAuthorizer()
 	if err != nil {
-		log.Fatalf("Error authorizing: %v\n", err.Error())
+		log.Panicf("Error authorizing: %v\n", err.Error())
 	}
 	client.Authorizer = a
 	client.AddToUserAgent(config.UserAgent())
@@ -29,7 +29,8 @@ func GetKey(vaultBaseURL string, keyName string, keyVersion string) (result keyv
 
 	key, err := client.GetKey(context.Background(), vaultBaseURL, keyName, keyVersion)
 	if err != nil {
-		log.Fatalf("Error getting key: %v\n", err.Error())
+		log.Printf("Error getting key: %v\n", err.Error())
+		return
 	}
 
 	result = *key.Key
@@ -71,7 +72,8 @@ func GetKey(vaultBaseURL string, keyName string, keyVersion string) (result keyv
 func GetKeyByURL(keyURL string) (result keyvault.JSONWebKey, err error) {
 	u, err := url.Parse(keyURL)
 	if err != nil {
-		log.Fatalf("Failed to parse URL for key: %v\n", err.Error())
+		log.Printf("Failed to parse URL for key: %v\n", err.Error())
+		return
 	}
 	vaultBaseURL := fmt.Sprintf("%v://%v", u.Scheme, u.Host)
 
@@ -81,7 +83,8 @@ func GetKeyByURL(keyURL string) (result keyvault.JSONWebKey, err error) {
 
 	result, err = GetKey(vaultBaseURL, keyName, "")
 	if err != nil {
-		log.Fatalf("Failed to get key from parsed values %v and %v: %v\n", vaultBaseURL, keyName, err.Error())
+		log.Printf("Failed to get key from parsed values %v and %v: %v\n", vaultBaseURL, keyName, err.Error())
+		return
 	}
 
 	return
@@ -93,7 +96,8 @@ func GetKeys(vaultBaseURL string) (results []keyvault.JSONWebKey, err error) {
 	max := int32(25)
 	pages, err := client.GetKeys(context.Background(), vaultBaseURL, &max)
 	if err != nil {
-		log.Fatalf("Error getting key: %v\n", err.Error())
+		log.Printf("Error getting key: %v\n", err.Error())
+		return
 	}
 
 	for {
@@ -101,7 +105,8 @@ func GetKeys(vaultBaseURL string) (results []keyvault.JSONWebKey, err error) {
 			keyURL := *value.Kid
 			key, err := GetKeyByURL(keyURL)
 			if err != nil {
-				log.Fatalf("Error loading key contents: %v\n", err.Error())
+				log.Printf("Error loading key contents: %v\n", err.Error())
+				return
 			}
 
 			results = append(results, key)

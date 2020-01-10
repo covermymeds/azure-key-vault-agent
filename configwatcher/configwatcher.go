@@ -11,7 +11,8 @@ import (
 func Watcher(path string) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Fatal(err)
+		log.Printf("Error establishing file watcher: %v\n", err)
+		return
 	}
 
 	// If something goes wrong along the way, close the watcher
@@ -28,7 +29,7 @@ func Watcher(path string) {
 
 	err = watcher.Add(path)
 	if err != nil {
-		log.Fatal(err)
+		log.Panicf("Error watching path %v: %v\n", path, err)
 	}
 	<-done // Block until done
 }
@@ -52,9 +53,8 @@ func doWatch(watcher *fsnotify.Watcher, cancel context.CancelFunc, path string) 
 			if !ok {
 				continue
 			}
-			log.Println("event:", event)
 			if event.Op&fsnotify.Write == fsnotify.Write {
-				log.Println("modified file:", event.Name)
+				log.Printf("Config watcher noticed a change to %v\n", event.Name)
 				// Kill workers and start new ones
 				cancel()
 				cancel = parseAndStartWorkers(path)
@@ -63,7 +63,8 @@ func doWatch(watcher *fsnotify.Watcher, cancel context.CancelFunc, path string) 
 			if !ok {
 				continue
 			}
-			log.Println("error:", err)
+			log.Printf("Config watcher encountered an error for %v: %v\n", path, err)
+			return
 		}
 	}
 }

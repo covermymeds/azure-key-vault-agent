@@ -14,17 +14,17 @@ type Config struct {
 	Sinks []sink.SinkConfig `yaml: "sinks, omitempty"`
 }
 
-func ParseConfig(path string) []sink.SinkConfig{
+func ParseConfig(path string) []sink.SinkConfig {
 	config := Config{}
 	data, err := ioutil.ReadFile(path)
 
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		log.Panicf("Error reading config %v: %v", path, err)
 	}
 
 	err = yaml.Unmarshal([]byte(data), &config)
 	if err != nil {
-		log.Fatalf("error: %v", err)
+		log.Panicf("Error unmarshalling yaml: %v", err)
 	}
 
 	validateSinkConfigs(config.Sinks)
@@ -32,7 +32,7 @@ func ParseConfig(path string) []sink.SinkConfig{
 	return config.Sinks
 }
 
-func validateSinkConfigs(sinkConfigs []sink.SinkConfig){
+func validateSinkConfigs(sinkConfigs []sink.SinkConfig) {
 	validate = validator.New()
 
 	for _, sinkConfig := range sinkConfigs {
