@@ -17,7 +17,7 @@ func getClient() keyvault.BaseClient {
 	client := keyvault.New()
 	a, err := iam.GetKeyvaultAuthorizer()
 	if err != nil {
-		log.Fatalf("Error authorizing: %v\n", err.Error())
+		log.Panicf("Error authorizing: %v\n", err.Error())
 	}
 	client.Authorizer = a
 	client.AddToUserAgent(config.UserAgent())
@@ -29,7 +29,8 @@ func GetSecret(vaultBaseURL string, secretName string, secretVersion string) (re
 
 	secret, err := client.GetSecret(context.Background(), vaultBaseURL, secretName, secretVersion)
 	if err != nil {
-		log.Fatalf("Error getting secret: %v\n", err.Error())
+		log.Printf("Error getting secret: %v\n", err.Error())
+		return
 	}
 
 	result = *secret.Value
@@ -40,7 +41,8 @@ func GetSecret(vaultBaseURL string, secretName string, secretVersion string) (re
 func GetSecretByURL(secretURL string) (result string, err error) {
 	u, err := url.Parse(secretURL)
 	if err != nil {
-		log.Fatalf("Failed to parse URL for secret: %v\n", err.Error())
+		log.Printf("Failed to parse URL for secret: %v\n", err.Error())
+		return
 	}
 	vaultBaseURL := fmt.Sprintf("%v://%v", u.Scheme, u.Host)
 
@@ -50,7 +52,8 @@ func GetSecretByURL(secretURL string) (result string, err error) {
 
 	result, err = GetSecret(vaultBaseURL, secretName, "")
 	if err != nil {
-		log.Fatalf("Failed to get secret from parsed values %v and %v: %v\n", vaultBaseURL, secretName, err.Error())
+		log.Printf("Failed to get secret from parsed values %v and %v: %v\n", vaultBaseURL, secretName, err.Error())
+		return
 	}
 
 	return
@@ -62,15 +65,18 @@ func GetSecrets(vaultBaseURL string) (results []string, err error) {
 	max := int32(25)
 	pages, err := client.GetSecrets(context.Background(), vaultBaseURL, &max)
 	if err != nil {
-		log.Fatalf("Error getting secret: %v\n", err.Error())
+		log.Printf("Error getting secret: %v\n", err.Error())
+		return
 	}
 
 	for {
 		for _, value := range pages.Values() {
 			secretURL := *value.ID
-			secret, err := GetSecretByURL(secretURL)
-			if err != nil {
-				log.Fatalf("Error loading secret contents: %v\n", err.Error())
+			secret, secretErr := GetSecretByURL(secretURL)
+			if secretErr != nil {
+				err = secretErr
+				log.Printf("Error loading secret contents: %v\n", err.Error())
+				return
 			}
 
 			results = append(results, secret)

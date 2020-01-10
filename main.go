@@ -11,12 +11,12 @@ func init() {
 	var err error
 	err = config.ParseEnvironment()
 	if err != nil {
-		log.Fatalf("failed to parse env: %v\n", err.Error())
+		log.Panicf("failed to parse env: %v\n", err.Error())
 	}
 
 	err = config.AddFlags()
 	if err != nil {
-		log.Fatalf("failed to parse flags: %v\n", err.Error())
+		log.Panicf("failed to parse flags: %v\n", err.Error())
 	}
 	flag.Parse()
 }

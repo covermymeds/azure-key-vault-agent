@@ -105,10 +105,10 @@ func fetch(ctx context.Context, cfg sink.SinkConfig) (err error) {
 		}
 
 	case sink.KeyKind:
-		log.Fatalf("Not implemented yet")
+		log.Panicf("Not implemented yet")
 
 	default:
-		log.Fatalf("Invalid sink kind: %v\n", cfg.Kind)
+		log.Panicf("Invalid sink kind: %v\n", cfg.Kind)
 	}
 
 	return
