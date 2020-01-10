@@ -32,7 +32,6 @@ func ParseConfig(path string) []sink.SinkConfig{
 	return config.Sinks
 }
 
-
 func validateSinkConfigs(sinkConfigs []sink.SinkConfig){
 	validate = validator.New()
 
