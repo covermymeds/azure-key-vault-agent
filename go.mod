@@ -10,6 +10,7 @@ require (
 	github.com/Azure/go-autorest/autorest/to v0.3.0 // indirect
 	github.com/Azure/go-autorest/autorest/validation v0.2.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.7
+	github.com/go-playground/validator/v10 v10.1.0
 	github.com/gobuffalo/envy v1.8.1
 	github.com/jpillora/backoff v1.0.0
 	github.com/marstr/randname v0.0.0-20181206212954-d5b0f288ab8c
