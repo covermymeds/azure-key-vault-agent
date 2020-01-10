@@ -17,7 +17,7 @@ type SinkConfig struct {
 	VaultBaseURL string        `yaml:"vaultBaseURL,omitempty" validate:"required,url"`
 	Name         string        `yaml:"name,omitempty" validate:"required"`
 	Version      string        `yaml:"version,omitempty"`
-	Path         string        `yaml:"path,omitempty"`
+	Path         string        `yaml:"path,omitempty" validate:"required"`
 	Frequency    time.Duration `yaml:"frequency,omitempty" validate:"numeric"`
 	Template     string        `yaml:"template,omitempty"`
 	TemplatePath string        `yaml:"templatePath,omitempty"`
