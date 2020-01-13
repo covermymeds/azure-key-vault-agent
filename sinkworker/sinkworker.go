@@ -15,9 +15,10 @@ import (
 const RetryBreakPoint = 60
 
 func Worker(ctx context.Context, cfg sink.SinkConfig) {
+	readabletime, _ := time.ParseDuration(cfg.Frequency)
 	b := &backoff.Backoff{
-		Min:    cfg.Frequency * time.Second,
-		Max:    cfg.Frequency * 10 * time.Second,
+		Min:    time.Duration(readabletime),
+		Max:    time.Duration(readabletime) * 10,
 		Factor: 2,
 		Jitter: true,
 	}
@@ -42,7 +43,7 @@ func Worker(ctx context.Context, cfg sink.SinkConfig) {
 			log.Printf("Polling for worker %v\n", cfg.Name)
 			err := process(ctx, cfg)
 			if err != nil {
-				if cfg.Frequency > RetryBreakPoint {
+				if readabletime.Seconds() > RetryBreakPoint {
 					// For long frequencies, we should set up an explicit retry
 					d := b.Duration()
 					ticker = time.NewTicker(d)
@@ -54,7 +55,7 @@ func Worker(ctx context.Context, cfg sink.SinkConfig) {
 				}
 			} else {
 				// Reset the ticker once we've got a good result
-				if cfg.Frequency > RetryBreakPoint {
+				if readabletime.Seconds() > RetryBreakPoint {
 					b.Reset()
 					d := b.Duration()
 					ticker = time.NewTicker(d)
