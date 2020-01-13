@@ -1,7 +1,7 @@
 sinks:
   - kind: secret
     path: /tmp/whatever
-    frequency: 2
+    frequency: 30s
     vaultBaseURL: https://cjohnson-kv.vault.azure.net/
     name: password
     postChange: echo goodbye
@@ -9,7 +9,7 @@ sinks:
     #version: 1a131058e8934267ae695703367c485d
   - kind: cert
     path: /tmp/whatever
-    frequency: 2
+    frequency: 1m
     vaultBaseURL: https://cjohnson-kv.vault.azure.net/
     name: password
     postChange: echo goodbye
