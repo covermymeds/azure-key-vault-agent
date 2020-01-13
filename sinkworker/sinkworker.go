@@ -24,9 +24,12 @@ func Worker(ctx context.Context, cfg sink.SinkConfig) {
 		if err != nil {
 			// Default time to 1m instead of 100ms if input is not valid
 			readabletime, _ = time.ParseDuration("1m")
+			log.Println("The value of Frequency was not valid, defaulting to 1m from", cfg.Frequency)
 		} else {
 			// Convert the nanoseconds to seconds
 			readabletime = time.Duration(intreadable * 1000000000)
+			log.Println("The value of Frequency was too low, defaulting to seconds from", cfg.Frequency)
+
 		}
 
 	}
