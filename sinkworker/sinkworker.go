@@ -3,6 +3,7 @@ package sinkworker
 import (
 	"context"
 	"log"
+	"strconv"
 	"time"
 
 	"github.com/chrisjohnson/azure-key-vault-agent/certs"
@@ -16,6 +17,19 @@ const RetryBreakPoint = 60
 
 func Worker(ctx context.Context, cfg sink.SinkConfig) {
 	readabletime, _ := time.ParseDuration(cfg.Frequency)
+
+	// If the time specified is less than 1 second, treat the value as seconds
+	if readabletime <= time.Duration(1000000000) {
+		intreadable, err := strconv.Atoi(cfg.Frequency)
+		if err != nil {
+			// Default time to 1m instead of 100ms if input is not valid
+			readabletime, _ = time.ParseDuration("1m")
+		} else {
+			// Convert the nanoseconds to seconds
+			readabletime = time.Duration(intreadable * 1000000000)
+		}
+
+	}
 	b := &backoff.Backoff{
 		Min:    time.Duration(readabletime),
 		Max:    time.Duration(readabletime) * 10,
