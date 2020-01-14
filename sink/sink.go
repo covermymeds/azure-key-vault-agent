@@ -23,15 +23,4 @@ type SinkConfig struct {
 	TemplatePath string        `yaml:"templatePath,omitempty"`
 	PreChange    string        `yaml:"preChange,omitempty"`
 	PostChange   string        `yaml:"postChange,omitempty"`
-
-	/*
-	   - kind: cert
-	     path: /etc/nginx/certs/foo.cert
-	     refresh: 5s
-	     vaultBaseURL: https://cjohnson-kv.vault.azure.net/
-	     name: cjohnson-test-cert
-	     postChange: service nginx restart
-	     preChange: who knows
-	     version: latest # or specific version number
-	*/
 }

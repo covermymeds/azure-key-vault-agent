@@ -5,15 +5,37 @@ import (
 	"fmt"
 	"log"
 	"net/url"
+	//"reflect"
 	"regexp"
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/2016-10-01/keyvault"
 
 	"github.com/chrisjohnson/azure-key-vault-agent/config"
 	"github.com/chrisjohnson/azure-key-vault-agent/iam"
+	"github.com/chrisjohnson/azure-key-vault-agent/resource"
 )
 
-func getClient() keyvault.BaseClient {
+type Key keyvault.KeyBundle
+
+func (k Key) Map() map[string]interface{} {
+	m := make(map[string]interface{})
+	/*
+		v := reflect.ValueOf(m)
+		for i := 0; i < v.NumField(); i++ {
+			log.Println(v.Field(i))
+			//m[v.Field(i)] = v.Field(i).Interface()
+		}
+	*/
+
+	return m
+}
+
+func (k Key) String() string {
+	//TODO
+	return *k.Key.Kid
+}
+
+func newClient() keyvault.BaseClient {
 	client := keyvault.New()
 	a, err := iam.GetKeyvaultAuthorizer()
 	if err != nil {
@@ -24,16 +46,14 @@ func getClient() keyvault.BaseClient {
 	return client
 }
 
-func GetKey(vaultBaseURL string, keyName string, keyVersion string) (result keyvault.JSONWebKey, err error) {
-	client := getClient()
-
-	key, err := client.GetKey(context.Background(), vaultBaseURL, keyName, keyVersion)
+func GetKey(vaultBaseURL string, keyName string, keyVersion string) (resource.Resource, error) {
+	key, err := newClient().GetKey(context.Background(), vaultBaseURL, keyName, keyVersion)
 	if err != nil {
 		log.Printf("Error getting key: %v\n", err.Error())
-		return
+		return nil, err
 	}
 
-	result = *key.Key
+	result := *key.Key
 
 	/*
 		kb := *key.Key
@@ -66,14 +86,14 @@ func GetKey(vaultBaseURL string, keyName string, keyVersion string) (result keyv
 		result = ""
 	*/
 
-	return
+	return result, err
 }
 
-func GetKeyByURL(keyURL string) (result keyvault.JSONWebKey, err error) {
+func GetKeyByURL(keyURL string) (resource.Resource, error) {
 	u, err := url.Parse(keyURL)
 	if err != nil {
 		log.Printf("Failed to parse URL for key: %v\n", err.Error())
-		return
+		return nil, err
 	}
 	vaultBaseURL := fmt.Sprintf("%v://%v", u.Scheme, u.Host)
 
@@ -81,32 +101,31 @@ func GetKeyByURL(keyURL string) (result keyvault.JSONWebKey, err error) {
 	res := regex.FindAllStringSubmatch(u.Path, -1)
 	keyName := res[0][1]
 
-	result, err = GetKey(vaultBaseURL, keyName, "")
+	result, err := GetKey(vaultBaseURL, keyName, "")
 	if err != nil {
 		log.Printf("Failed to get key from parsed values %v and %v: %v\n", vaultBaseURL, keyName, err.Error())
-		return
+		return nil, err
 	}
 
-	return
+	return result, nil
 }
 
-func GetKeys(vaultBaseURL string) (results []keyvault.JSONWebKey, err error) {
-	client := getClient()
-
+func GetKeys(vaultBaseURL string) ([]resource.Resource, error) {
 	max := int32(25)
-	pages, err := client.GetKeys(context.Background(), vaultBaseURL, &max)
+	pages, err := newClient().GetKeys(context.Background(), vaultBaseURL, &max)
 	if err != nil {
 		log.Printf("Error getting key: %v\n", err.Error())
-		return
+		return nil, err
 	}
 
+	var results []resource.Resource
 	for {
 		for _, value := range pages.Values() {
 			keyURL := *value.Kid
 			key, err := GetKeyByURL(keyURL)
 			if err != nil {
 				log.Printf("Error loading key contents: %v\n", err.Error())
-				return
+				return nil, err
 			}
 
 			results = append(results, key)
@@ -119,5 +138,5 @@ func GetKeys(vaultBaseURL string) (results []keyvault.JSONWebKey, err error) {
 		}
 	}
 
-	return
+	return results, nil
 }
