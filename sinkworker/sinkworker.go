@@ -2,10 +2,12 @@ package sinkworker
 
 import (
 	"context"
+	"errors"
 	"log"
 	"time"
 
 	"github.com/chrisjohnson/azure-key-vault-agent/certs"
+	"github.com/chrisjohnson/azure-key-vault-agent/resource"
 	"github.com/chrisjohnson/azure-key-vault-agent/secrets"
 	"github.com/chrisjohnson/azure-key-vault-agent/sink"
 
@@ -25,7 +27,7 @@ func Worker(ctx context.Context, cfg sink.SinkConfig) {
 	d := b.Duration()
 	ticker := time.NewTicker(d)
 
-	log.Printf("Starting worker for %v with refresh %v\n", cfg.Name, d)
+	log.Printf("Starting worker of kind %v for %v with refresh %v\n", cfg.Kind, cfg.Name, d)
 
 	err := process(ctx, cfg)
 	if err != nil {
@@ -43,7 +45,7 @@ func Worker(ctx context.Context, cfg sink.SinkConfig) {
 			err := process(ctx, cfg)
 			if err != nil {
 				if cfg.TimeFrequency > RetryBreakPoint {
-					// For long frequencies, we should set up an explicit retry
+					// For long frequencies, we should set up an explicit retry (with backoff)
 					d := b.Duration()
 					ticker = time.NewTicker(d)
 					log.Println(err)
@@ -65,44 +67,49 @@ func Worker(ctx context.Context, cfg sink.SinkConfig) {
 	}
 }
 
-func process(ctx context.Context, cfg sink.SinkConfig) (err error) {
-	err = fetch(ctx, cfg)
-	if err == nil {
-		return
+var count int
+
+func process(ctx context.Context, cfg sink.SinkConfig) error {
+	result, err := fetch(ctx, cfg)
+	count++
+	if count > 2 && count < 8 {
+		return errors.New("FAKE ERROR FROM AZURE")
+	}
+	if err != nil {
+		return err
+	}
+	log.Print(result.Map())
+	log.Printf("Got resource of kind %v for %v: %v\n", cfg.Kind, cfg.Name, result.String())
+
+	// TODO: return now if the value hasn't changed
+
+	if cfg.Template != "" || cfg.TemplatePath != "" {
+		log.Println("TODO: pass to template")
 	}
 
-	/*
-		err = write(ctx, cfg)
-		if err == nil {
-			return
-		}
-	*/
+	if cfg.PreChange != "" {
+		log.Println("TODO: prechange hooks")
+	}
 
-	return
+	err = write(ctx, cfg, result)
+	if err != nil {
+		return err
+	}
+
+	if cfg.PostChange != "" {
+		log.Println("TODO: postchange hooks")
+	}
+
+	return nil
 }
 
-func fetch(ctx context.Context, cfg sink.SinkConfig) (err error) {
+func fetch(ctx context.Context, cfg sink.SinkConfig) (result resource.Resource, err error) {
 	switch cfg.Kind {
 	case sink.CertKind:
-		cert, certErr := certs.GetCert(cfg.VaultBaseURL, cfg.Name, cfg.Version)
-		if certErr != nil {
-			err = certErr
-		} else {
-			log.Printf("Got cert %v: %v\n", cfg.Name, cert)
-		}
-		// TODO: Send to file writer, along with any template details
-		// TODO: Trigger pre and post change hooks
-		// TODO: Determine what constitutes a "change"
-		// TODO: retry/backoff
-		// TODO: If freq < 1m, just ignore failures, otherwise create an explicit retry
+		result, err = certs.GetCert(cfg.VaultBaseURL, cfg.Name, cfg.Version)
 
 	case sink.SecretKind:
-		secret, secretErr := secrets.GetSecret(cfg.VaultBaseURL, cfg.Name, cfg.Version)
-		if secretErr != nil {
-			err = secretErr
-		} else {
-			log.Printf("Got secret %v: %v\n", cfg.Name, secret)
-		}
+		result, err = secrets.GetSecret(cfg.VaultBaseURL, cfg.Name, cfg.Version)
 
 	case sink.KeyKind:
 		log.Panicf("Not implemented yet")
@@ -111,10 +118,13 @@ func fetch(ctx context.Context, cfg sink.SinkConfig) (err error) {
 		log.Panicf("Invalid sink kind: %v\n", cfg.Kind)
 	}
 
-	return
+	if err != nil {
+		return nil, err
+	} else {
+		return result, nil
+	}
 }
 
-func write(ctx context.Context, cfg sink.SinkConfig) (err error) {
-	err = nil
-	return
+func write(ctx context.Context, cfg sink.SinkConfig, result resource.Resource) error {
+	return nil
 }
