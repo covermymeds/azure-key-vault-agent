@@ -5,6 +5,7 @@ import (
 	"github.com/chrisjohnson/azure-key-vault-agent/resource"
 	"log"
 	"os"
+	"path/filepath"
 	"text/template"
 )
 
@@ -20,7 +21,7 @@ func InlineTemplate(inline string, path string, resource resource.Resource) {
 	defer f.Close()
 
 	// Execute the template
-	err = t.Execute(f, resource.Map())
+	err = t.Execute(f, resource)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -28,7 +29,7 @@ func InlineTemplate(inline string, path string, resource resource.Resource) {
 
 func TemplateFile(tpath string, path string, resource resource.Resource) {
 	// read in the template file
-	t := template.Must(template.New(tpath).Funcs(sprig.TxtFuncMap()).ParseFiles(tpath))
+	t := template.Must(template.New(filepath.Base(tpath)).Funcs(sprig.TxtFuncMap()).ParseFiles(tpath))
 
 	// create the destination file
 	f, err := os.Create(path)
@@ -38,7 +39,7 @@ func TemplateFile(tpath string, path string, resource resource.Resource) {
 	defer f.Close()
 
 	// Execute the template
-	err = t.Execute(f, resource.Map())
+	err = t.Execute(f, resource)
 	if err != nil {
 		log.Panic(err)
 	}
