@@ -3,6 +3,7 @@ package sinkworker
 import (
 	"context"
 	"errors"
+	"github.com/chrisjohnson/azure-key-vault-agent/templateparser"
 	"log"
 	"time"
 
@@ -85,6 +86,13 @@ func process(ctx context.Context, cfg sink.SinkConfig) error {
 
 	if cfg.Template != "" || cfg.TemplatePath != "" {
 		log.Println("TODO: pass to template")
+		if cfg.Template != "" {
+			// execute inline template
+			templateparser.InlineTemplate(cfg.Template, cfg.Path, result)
+		} else {
+			// execute template file
+			templateparser.TemplateFile(cfg.TemplatePath, cfg.Path, result)
+		}
 	}
 
 	if cfg.PreChange != "" {
