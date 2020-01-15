@@ -2,10 +2,11 @@ package configwatcher
 
 import (
 	"context"
+	"log"
+
 	"github.com/chrisjohnson/azure-key-vault-agent/configparser"
 	"github.com/chrisjohnson/azure-key-vault-agent/sinkworker"
 	"github.com/fsnotify/fsnotify"
-	"log"
 )
 
 func Watcher(path string) {
