@@ -3,7 +3,6 @@ package sinkworker
 import (
 	"context"
 	"log"
-	"strconv"
 	"time"
 
 	"github.com/chrisjohnson/azure-key-vault-agent/certs"
@@ -16,26 +15,9 @@ import (
 const RetryBreakPoint = 60
 
 func Worker(ctx context.Context, cfg sink.SinkConfig) {
-	readabletime, _ := time.ParseDuration(cfg.Frequency)
-
-	// If the time specified is less than 1 second, treat the value as seconds
-	if readabletime <= time.Duration(1000000000) {
-		intreadable, err := strconv.Atoi(cfg.Frequency)
-		if err != nil {
-			// Default time to 1m instead of 100ms if input is not valid
-			readabletime, _ = time.ParseDuration("1m")
-			log.Println("The value of Frequency was not valid, defaulting to 1m from", cfg.Frequency)
-		} else {
-			// Convert the nanoseconds to seconds
-			readabletime = time.Duration(intreadable * 1000000000)
-			log.Println("The value of Frequency was too low, defaulting to seconds from", cfg.Frequency)
-
-		}
-
-	}
 	b := &backoff.Backoff{
-		Min:    time.Duration(readabletime),
-		Max:    time.Duration(readabletime) * 10,
+		Min:    time.Duration(cfg.TimeFrequency),
+		Max:    time.Duration(cfg.TimeFrequency) * 10,
 		Factor: 2,
 		Jitter: true,
 	}
@@ -60,7 +42,7 @@ func Worker(ctx context.Context, cfg sink.SinkConfig) {
 			log.Printf("Polling for worker %v\n", cfg.Name)
 			err := process(ctx, cfg)
 			if err != nil {
-				if readabletime.Seconds() > RetryBreakPoint {
+				if cfg.TimeFrequency > RetryBreakPoint {
 					// For long frequencies, we should set up an explicit retry
 					d := b.Duration()
 					ticker = time.NewTicker(d)
@@ -72,7 +54,7 @@ func Worker(ctx context.Context, cfg sink.SinkConfig) {
 				}
 			} else {
 				// Reset the ticker once we've got a good result
-				if readabletime.Seconds() > RetryBreakPoint {
+				if cfg.TimeFrequency > RetryBreakPoint {
 					b.Reset()
 					d := b.Duration()
 					ticker = time.NewTicker(d)
