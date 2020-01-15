@@ -39,7 +39,12 @@ func validateSinkConfigs(sinkConfigs []sink.SinkConfig) {
 		err := validate.Struct(sinkConfig)
 
 		if err != nil {
-			log.Fatalf("error: %v", err)
+			log.Panicf("error: %v", err)
+		}
+
+		// Ensure that Template and Template Path are not both defined
+		if sinkConfig.Template != "" && sinkConfig.TemplatePath != "" {
+			log.Panic("Template and TemplatePath cannot both be defined")
 		}
 	}
 }
