@@ -49,7 +49,7 @@ func frequencyConverter(freq string) time.Duration {
 	readabletime, _ := time.ParseDuration(freq)
 
 	// If the time specified is less than 1 second, treat the value as seconds
-	if readabletime <= time.Duration(1000000000) {
+	if readabletime <= time.Duration(time.Second) {
 		intreadable, err := strconv.Atoi(freq)
 		if err != nil {
 			// Default time to 1m instead of 100ms if input is not valid
@@ -57,7 +57,7 @@ func frequencyConverter(freq string) time.Duration {
 			log.Println("The value of Frequency was not valid, defaulting to 1m from", freq)
 		} else {
 			// Convert the nanoseconds to seconds
-			readabletime = time.Duration(intreadable * 1000000000)
+			readabletime = time.Duration(intreadable) * time.Second
 			log.Println("The value of Frequency was too low, defaulting to seconds from", freq)
 
 		}
