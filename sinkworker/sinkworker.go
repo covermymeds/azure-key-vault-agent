@@ -2,8 +2,8 @@ package sinkworker
 
 import (
 	"context"
-	"errors"
 	"github.com/chrisjohnson/azure-key-vault-agent/templateparser"
+	"io/ioutil"
 	"log"
 	"os"
 	"time"
@@ -75,7 +75,7 @@ func process(ctx context.Context, cfg sink.SinkConfig) error {
 	result, err := fetch(ctx, cfg)
 	count++
 	if count > 2 && count < 8 {
-		return errors.New("FAKE ERROR FROM AZURE")
+		//return errors.New("FAKE ERROR FROM AZURE")
 	}
 	if err != nil {
 		return err
@@ -83,16 +83,29 @@ func process(ctx context.Context, cfg sink.SinkConfig) error {
 	log.Print(result.Map())
 	log.Printf("Got resource of kind %v for %v: %v\n", cfg.Kind, cfg.Name, result.String())
 
-	// TODO: return now if the value hasn't changed
+	// Get old content
+	oldContent := getOldContent(cfg)
 
-	if cfg.PreChange != "" {
-		log.Println("TODO: prechange hooks")
-	}
+	// Get new content
+	newContent := getNewContent(cfg, result)
 
-	write(ctx, cfg, result)
+	// Compare
+	changed := oldContent != newContent
 
-	if cfg.PostChange != "" {
-		log.Println("TODO: postchange hooks")
+	// Conditionally to pre / post change
+	// Conditionally write
+	if changed {
+		if cfg.PreChange != "" {
+			log.Println("TODO: prechange hooks")
+		}
+
+		write(cfg, newContent)
+
+		if cfg.PostChange != "" {
+			log.Println("TODO: postchange hooks")
+		}
+	} else {
+		log.Printf("No change detected for %v", cfg.Path)
 	}
 
 	return nil
@@ -120,24 +133,52 @@ func fetch(ctx context.Context, cfg sink.SinkConfig) (result resource.Resource, 
 	}
 }
 
-func write(ctx context.Context, cfg sink.SinkConfig, result resource.Resource) {
-	// if we have templates let them do the file writing, otherwise just write the secret to path
+func getNewContent(cfg sink.SinkConfig, result resource.Resource) string {
+	// If we have templates get the new value from rendering them
 	if cfg.Template != "" || cfg.TemplatePath != "" {
 		if cfg.Template != "" {
-			// execute inline template
-			templateparser.InlineTemplate(cfg.Template, cfg.Path, result)
+			// Execute inline template
+			return templateparser.InlineTemplate(cfg.Template, cfg.Path, result)
 		} else {
-			// execute template file
-			templateparser.TemplateFile(cfg.TemplatePath, cfg.Path, result)
+			// Execute template file
+			return templateparser.TemplateFile(cfg.TemplatePath, cfg.Path, result)
 		}
 	} else {
-		log.Printf("Writing %v to %v", cfg.Kind, cfg.Path)
-		f, err := os.Create(cfg.Path)
-		defer f.Close()
-		f.WriteString(result.String())
+		// Just return the secret string
+		return result.String()
+	}
+}
 
-		if err != nil {
-			log.Panic(err)
+func getOldContent(cfg sink.SinkConfig) string {
+	// If path has changed it will not yet exist so return empty string
+	if _, err := os.Stat(cfg.Path); err != nil {
+		if os.IsNotExist(err) {
+			return ""
 		}
+	}
+
+	// Read the contents of the current file into a string
+	b, err := ioutil.ReadFile(cfg.Path)
+	if err != nil {
+		log.Panic(err)
+	}
+
+	return string(b)
+}
+
+func write(cfg sink.SinkConfig, content string) {
+	log.Printf("Writing %v to %v", cfg.Kind, cfg.Path)
+	f, err := os.Create(cfg.Path)
+
+	if err != nil {
+		log.Panic(err)
+	}
+
+	defer f.Close()
+
+	_, err = f.WriteString(content)
+
+	if err != nil {
+		log.Panic(err)
 	}
 }
