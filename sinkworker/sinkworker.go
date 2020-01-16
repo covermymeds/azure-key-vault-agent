@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/chrisjohnson/azure-key-vault-agent/templateparser"
 	"log"
+	"os"
 	"time"
 
 	"github.com/chrisjohnson/azure-key-vault-agent/certs"
@@ -84,22 +85,12 @@ func process(ctx context.Context, cfg sink.SinkConfig) error {
 
 	// TODO: return now if the value hasn't changed
 
-	if cfg.Template != "" || cfg.TemplatePath != "" {
-		log.Println("TODO: pass to template")
-		if cfg.Template != "" {
-			// execute inline template
-			templateparser.InlineTemplate(cfg.Template, cfg.Path, result)
-		} else {
-			// execute template file
-			templateparser.TemplateFile(cfg.TemplatePath, cfg.Path, result)
-		}
-	}
-
 	if cfg.PreChange != "" {
 		log.Println("TODO: prechange hooks")
 	}
 
-	err = write(ctx, cfg, result)
+	write(ctx, cfg, result)
+
 	if err != nil {
 		return err
 	}
@@ -133,6 +124,24 @@ func fetch(ctx context.Context, cfg sink.SinkConfig) (result resource.Resource, 
 	}
 }
 
-func write(ctx context.Context, cfg sink.SinkConfig, result resource.Resource) error {
-	return nil
+func write(ctx context.Context, cfg sink.SinkConfig, result resource.Resource) {
+	// if we have templates let them do the file writing, otherwise just write the secret to path
+	if cfg.Template != "" || cfg.TemplatePath != "" {
+		if cfg.Template != "" {
+			// execute inline template
+			templateparser.InlineTemplate(cfg.Template, cfg.Path, result)
+		} else {
+			// execute template file
+			templateparser.TemplateFile(cfg.TemplatePath, cfg.Path, result)
+		}
+	} else {
+		log.Printf("Writing %v to %v", cfg.Kind, cfg.Path)
+		f, err := os.Create(cfg.Path)
+		defer f.Close()
+		f.WriteString(result.String())
+
+		if err != nil {
+			log.Panic(err)
+		}
+	}
 }
