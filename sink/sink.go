@@ -22,15 +22,4 @@ type SinkConfig struct {
 	PreChange     string        `yaml:"preChange,omitempty"`
 	PostChange    string        `yaml:"postChange,omitempty"`
 	TimeFrequency time.Duration `yaml:"timefrequency" validate:"-"`
-
-	/*
-	   - kind: cert
-	     path: /etc/nginx/certs/foo.cert
-	     refresh: 5s
-	     vaultBaseURL: https://cjohnson-kv.vault.azure.net/
-	     name: cjohnson-test-cert
-	     postChange: service nginx restart
-	     preChange: who knows
-	     version: latest # or specific version number
-	*/
 }
