@@ -91,10 +91,6 @@ func process(ctx context.Context, cfg sink.SinkConfig) error {
 
 	write(ctx, cfg, result)
 
-	if err != nil {
-		return err
-	}
-
 	if cfg.PostChange != "" {
 		log.Println("TODO: postchange hooks")
 	}
