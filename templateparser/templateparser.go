@@ -10,7 +10,8 @@ import (
 )
 
 func InlineTemplate(inline string, path string, resource resource.Resource) {
-	// read in the template file
+	log.Printf("Parsing in-line template and writing result to %v", path)
+	// read in the template
 	t := template.Must(template.New("inline").Funcs(sprig.TxtFuncMap()).Parse(inline))
 
 	// create the destination file
@@ -28,6 +29,7 @@ func InlineTemplate(inline string, path string, resource resource.Resource) {
 }
 
 func TemplateFile(tpath string, path string, resource resource.Resource) {
+	log.Printf("Parsing template file %v and writing result to %v", tpath, path)
 	// read in the template file
 	t := template.Must(template.New(filepath.Base(tpath)).Funcs(sprig.TxtFuncMap()).ParseFiles(tpath))
 
