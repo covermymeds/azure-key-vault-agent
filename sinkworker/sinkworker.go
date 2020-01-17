@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"time"
 
 	"github.com/chrisjohnson/azure-key-vault-agent/certs"
@@ -92,17 +93,22 @@ func process(ctx context.Context, cfg sink.SinkConfig) error {
 	// Compare
 	changed := oldContent != newContent
 
-	// Conditionally to pre / post change
-	// Conditionally write
+	// If a change was detected run pre/post commands and write the new file
 	if changed {
 		if cfg.PreChange != "" {
-			log.Println("TODO: prechange hooks")
+			err := runCommand(cfg.PreChange)
+			if err != nil {
+				log.Printf("PreChange command errored: %v", err)
+			}
 		}
 
 		write(cfg, newContent)
 
 		if cfg.PostChange != "" {
-			log.Println("TODO: postchange hooks")
+			err := runCommand(cfg.PostChange)
+			if err != nil {
+				log.Printf("PostChange command errored: %v", err)
+			}
 		}
 	} else {
 		log.Printf("No change detected for %v", cfg.Path)
@@ -181,4 +187,12 @@ func write(cfg sink.SinkConfig, content string) {
 	if err != nil {
 		log.Panic(err)
 	}
+}
+
+func runCommand(command string) error {
+	log.Printf("Executing %v", command)
+	cmd := exec.Command("sh", "-c", command)
+
+	err := cmd.Run()
+	return err
 }
