@@ -90,11 +90,8 @@ func process(ctx context.Context, cfg sink.SinkConfig) error {
 	// Get new content
 	newContent := getNewContent(cfg, result)
 
-	// Compare
-	changed := oldContent != newContent
-
 	// If a change was detected run pre/post commands and write the new file
-	if changed {
+	if oldContent != newContent {
 		if cfg.PreChange != "" {
 			err := runCommand(cfg.PreChange)
 			if err != nil {
