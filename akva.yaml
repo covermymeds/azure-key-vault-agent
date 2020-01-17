@@ -9,7 +9,7 @@ sinks:
     preChange: echo hello
     #version: 1a131058e8934267ae695703367c485d
   - kind: cert
-    path: ./pem-test.crt
+    path: ./pem-test-cert.json
     frequency: 5s
     template: "{{. | toJson}}"
     vaultBaseURL: https://cjohnson-kv.vault.azure.net/
@@ -18,7 +18,7 @@ sinks:
     preChange: echo hello
     #version: 1a131058e8934267ae695703367c485d
   - kind: key
-    path: ./pem-test.key
+    path: ./pem-test-key.json
     template: "{{. | toJson}}"
     frequency: 5s
     vaultBaseURL: https://cjohnson-kv.vault.azure.net/
@@ -27,7 +27,7 @@ sinks:
     preChange: echo hello
     #version: 1a131058e8934267ae695703367c485d
   - kind: secret
-    path: ./pem-test.secret
+    path: ./pem-test-secret.json
     template: "{{. | toJson}}"
     frequency: 5s
     vaultBaseURL: https://cjohnson-kv.vault.azure.net/
