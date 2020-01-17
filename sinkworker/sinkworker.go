@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/chrisjohnson/azure-key-vault-agent/certs"
+	"github.com/chrisjohnson/azure-key-vault-agent/keys"
 	"github.com/chrisjohnson/azure-key-vault-agent/resource"
 	"github.com/chrisjohnson/azure-key-vault-agent/secrets"
 	"github.com/chrisjohnson/azure-key-vault-agent/sink"
@@ -126,7 +127,7 @@ func fetch(ctx context.Context, cfg sink.SinkConfig) (result resource.Resource, 
 		result, err = secrets.GetSecret(cfg.VaultBaseURL, cfg.Name, cfg.Version)
 
 	case sink.KeyKind:
-		log.Panicf("Not implemented yet")
+		result, err = keys.GetKey(cfg.VaultBaseURL, cfg.Name, cfg.Version)
 
 	default:
 		log.Panicf("Invalid sink kind: %v\n", cfg.Kind)

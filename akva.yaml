@@ -8,12 +8,29 @@ sinks:
     postChange: echo goodbye
     preChange: echo hello
     #version: 1a131058e8934267ae695703367c485d
-  - kind: secret
-    path: ./rendered2.txt
+  - kind: cert
+    path: ./pem-test.crt
+    frequency: 5s
+    template: "{{. | toJson}}"
+    vaultBaseURL: https://cjohnson-kv.vault.azure.net/
+    name: pem-test
+    postChange: echo goodbye
+    preChange: echo hello
+    #version: 1a131058e8934267ae695703367c485d
+  - kind: key
+    path: ./pem-test.key
     frequency: 5s
     vaultBaseURL: https://cjohnson-kv.vault.azure.net/
-    name: password
-    templatePath: ./test.tmpl
+    name: pem-test
+    postChange: echo goodbye
+    preChange: echo hello
+    #version: 1a131058e8934267ae695703367c485d
+  - kind: secret
+    path: ./pem-test.secret
+    template: "{{. | toJson}}"
+    frequency: 5s
+    vaultBaseURL: https://cjohnson-kv.vault.azure.net/
+    name: pem-test
     postChange: echo goodbye
     preChange: echo hello
     #version: 1a131058e8934267ae695703367c485d
