@@ -192,15 +192,9 @@ func write(cfg sink.SinkConfig, content string) {
 }
 
 func runCommand(command string) error {
-	// Check that bash is available
-	_, err := exec.LookPath("bash")
-	if err != nil {
-		log.Panic("Unable to find bash executable")
-	}
-
 	log.Printf("Executing %v", command)
-	cmd := exec.Command("bash", "-c", command)
+	cmd := exec.Command("sh", "-c", command)
 
-	err = cmd.Run()
+	err := cmd.Run()
 	return err
 }
