@@ -82,8 +82,7 @@ func process(ctx context.Context, cfg sink.SinkConfig) error {
 	if err != nil {
 		return err
 	}
-	log.Print(result.Map())
-	log.Printf("Got resource of kind %v for %v: %v\n", cfg.Kind, cfg.Name, result.String())
+	log.Printf("Got resource of kind %v for %v\n", cfg.Kind, cfg.Name)
 
 	// Get old content
 	oldContent := getOldContent(cfg)

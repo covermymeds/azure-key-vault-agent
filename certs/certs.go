@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	//"reflect"
 	"regexp"
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/2016-10-01/keyvault"
@@ -16,19 +15,6 @@ import (
 )
 
 type Cert keyvault.CertificateBundle
-
-func (c Cert) Map() map[string]interface{} {
-	m := make(map[string]interface{})
-	/*
-		v := reflect.ValueOf(m)
-		for i := 0; i < v.NumField(); i++ {
-			log.Println(v.Field(i))
-			//m[v.Field(i)] = v.Field(i).Interface()
-		}
-	*/
-
-	return m
-}
 
 func (c Cert) String() string {
 	return base64.StdEncoding.EncodeToString(*c.Cer)

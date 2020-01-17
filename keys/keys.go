@@ -2,11 +2,10 @@ package keys
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/url"
-	//"reflect"
-	"encoding/json"
 	"regexp"
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/2016-10-01/keyvault"
@@ -16,19 +15,6 @@ import (
 )
 
 type Key keyvault.KeyBundle
-
-func (k Key) Map() map[string]interface{} {
-	m := make(map[string]interface{})
-	/*
-		v := reflect.ValueOf(m)
-		for i := 0; i < v.NumField(); i++ {
-			log.Println(v.Field(i))
-			//m[v.Field(i)] = v.Field(i).Interface()
-		}
-	*/
-
-	return m
-}
 
 func (k Key) String() string {
 	bytes, _ := k.MarshalJSON()
