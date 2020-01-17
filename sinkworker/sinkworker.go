@@ -96,7 +96,6 @@ func process(ctx context.Context, cfg sink.SinkConfig) error {
 	// If a change was detected run pre/post commands and write the new file
 	if changed {
 		if cfg.PreChange != "" {
-			log.Println("Executing PreChange command")
 			err := runCommand(cfg.PreChange)
 			if err != nil {
 				log.Printf("PreChange command errored: %v", err)
@@ -106,7 +105,6 @@ func process(ctx context.Context, cfg sink.SinkConfig) error {
 		write(cfg, newContent)
 
 		if cfg.PostChange != "" {
-			log.Println("Executing PostChange command")
 			err := runCommand(cfg.PostChange)
 			if err != nil {
 				log.Printf("PostChange command errored: %v", err)
