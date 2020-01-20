@@ -2,28 +2,29 @@ workers:
   -
     resources:
       - kind: secret
-        name: cjohnson-test
+        name: pem-test
         vaultBaseURL: https://cjohnson-kv.vault.azure.net/
-        version: latest
       - kind: cert
-        name: cjohnson-test
+        name: pem-test
         vaultBaseURL: https://cjohnson-kv.vault.azure.net/
-        version: latest
     frequency: 5s
     preChange: restart nginx
     postChange: echo it worked
     sinks:
-      - path: ./private.key
-        template: "{{ .secrets.cjohnson-test.value | toPrivateKey }}"
-      - path: ./thing.cert
-        template: "{{ .secrets.cjohnson-test.value | toCert }}"
+      - path: ./pem-test.key
+        template: "{{ .Secrets.pem-test.value | toPrivateKey }}"
+      - path: ./pem-test.cert
+        template: "{{ .Secrets.pem-test.value | toCert }}"
+      - path: ./pem-test-metadata.json
+        template: "{{ .Certs.pem-test | toJson }}"
   -
     resources:
       - kind: secret
-        name: cjohnson-other-secret
+        name: password
+        vaultBaseURL: https://cjohnson-kv.vault.azure.net/
     frequency: 5s
     preChange: nginx restart
     sinks:
-      - path: ./app.json
-        template: "{{ .secrets.cjohnson-other-secret.value | toJson }}"
+      - path: ./password
+        template: "{{ .Secrets.password.Value }}"
         vaultBaseURL: https://cjohnson-kv.vault.azure.net/
