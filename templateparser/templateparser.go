@@ -15,14 +15,14 @@ func InlineTemplate(inline string, path string, resource resource.ResourceMap) s
 	// Read in the template
 	t, err := template.New("inline").Funcs(sprig.TxtFuncMap()).Parse(inline)
 	if err != nil {
-		log.Fatalf("Error parsing template:\n%v\nError:\n%v\n", inline, err)
+		log.Panicf("Error parsing template:\n%v\nError:\n%v\n", inline, err)
 	}
 
 	var buf bytes.Buffer
 	// Execute the template
 	err = t.Execute(&buf, resource)
 	if err != nil {
-		log.Fatalf("Error executing template:\n%v\nResource:\n%v\nError:\n%v\n", inline, resource, err)
+		log.Panicf("Error executing template:\n%v\nResource:\n%v\nError:\n%v\n", inline, resource, err)
 	}
 
 	result := buf.String()
@@ -33,14 +33,14 @@ func TemplateFile(tpath string, path string, resource resource.ResourceMap) stri
 	// Read in the template file
 	t, err := template.New(filepath.Base(tpath)).Funcs(sprig.TxtFuncMap()).ParseFiles(tpath)
 	if err != nil {
-		log.Fatalf("Error parsing template:\n%v\nError:\n%v\n", tpath, err)
+		log.Panicf("Error parsing template:\n%v\nError:\n%v\n", tpath, err)
 	}
 
 	var buf bytes.Buffer
 	// Execute the template
 	err = t.Execute(&buf, resource)
 	if err != nil {
-		log.Fatalf("Error executing template:\n%v\nResource:\n%v\nError:\n%v\n", tpath, resource, err)
+		log.Panicf("Error executing template:\n%v\nResource:\n%v\nError:\n%v\n", tpath, resource, err)
 	}
 
 	result := buf.String()

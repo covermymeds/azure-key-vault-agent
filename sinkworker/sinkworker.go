@@ -71,7 +71,8 @@ func Worker(ctx context.Context, cfg config.WorkerConfig) {
 }
 
 func process(ctx context.Context, cfg config.WorkerConfig) error {
-	var resources resource.ResourceMap
+	resources := resource.ResourceMap{make(map[string]certs.Cert), make(map[string]secrets.Secret), make(map[string]keys.Key)}
+
 	for _, resourceConfig := range cfg.Resources {
 		switch resourceConfig.Kind {
 		case config.CertKind:
@@ -83,10 +84,6 @@ func process(ctx context.Context, cfg config.WorkerConfig) error {
 
 		case config.SecretKind:
 			result, err := secrets.GetSecret(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
-			log.Println(result)
-			log.Println(err)
-			log.Println(resourceConfig.Name)
-			log.Println(resources.Secrets[resourceConfig.Name])
 			if err != nil {
 				return err
 			}
