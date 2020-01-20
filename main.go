@@ -2,19 +2,19 @@ package main
 
 import (
 	"flag"
-	"github.com/chrisjohnson/azure-key-vault-agent/config"
+	"github.com/chrisjohnson/azure-key-vault-agent/authconfig"
 	"github.com/chrisjohnson/azure-key-vault-agent/configwatcher"
 	"log"
 )
 
 func init() {
 	var err error
-	err = config.ParseEnvironment()
+	err = authconfig.ParseEnvironment()
 	if err != nil {
 		log.Panicf("failed to parse env: %v\n", err.Error())
 	}
 
-	err = config.AddFlags()
+	err = authconfig.AddFlags()
 	if err != nil {
 		log.Panicf("failed to parse flags: %v\n", err.Error())
 	}

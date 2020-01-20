@@ -2,6 +2,7 @@ package sinkworker
 
 import (
 	"context"
+	"github.com/chrisjohnson/azure-key-vault-agent/config"
 	"github.com/chrisjohnson/azure-key-vault-agent/templateparser"
 	"io/ioutil"
 	"log"
@@ -13,14 +14,12 @@ import (
 	"github.com/chrisjohnson/azure-key-vault-agent/keys"
 	"github.com/chrisjohnson/azure-key-vault-agent/resource"
 	"github.com/chrisjohnson/azure-key-vault-agent/secrets"
-	"github.com/chrisjohnson/azure-key-vault-agent/sink"
-
 	"github.com/jpillora/backoff"
 )
 
 const RetryBreakPoint = 60
 
-func Worker(ctx context.Context, cfg sink.SinkConfig) {
+func Worker(ctx context.Context, cfg config.SinkConfig) {
 	b := &backoff.Backoff{
 		Min:    time.Duration(cfg.TimeFrequency),
 		Max:    time.Duration(cfg.TimeFrequency) * 10,
@@ -73,7 +72,7 @@ func Worker(ctx context.Context, cfg sink.SinkConfig) {
 
 var count int
 
-func process(ctx context.Context, cfg sink.SinkConfig) error {
+func process(ctx context.Context, cfg config.SinkConfig) error {
 	result, err := fetch(ctx, cfg)
 	count++
 	if count > 2 && count < 8 {
@@ -114,15 +113,15 @@ func process(ctx context.Context, cfg sink.SinkConfig) error {
 	return nil
 }
 
-func fetch(ctx context.Context, cfg sink.SinkConfig) (result resource.Resource, err error) {
+func fetch(ctx context.Context, cfg config.SinkConfig) (result resource.Resource, err error) {
 	switch cfg.Kind {
-	case sink.CertKind:
+	case config.CertKind:
 		result, err = certs.GetCert(cfg.VaultBaseURL, cfg.Name, cfg.Version)
 
-	case sink.SecretKind:
+	case config.SecretKind:
 		result, err = secrets.GetSecret(cfg.VaultBaseURL, cfg.Name, cfg.Version)
 
-	case sink.KeyKind:
+	case config.KeyKind:
 		result, err = keys.GetKey(cfg.VaultBaseURL, cfg.Name, cfg.Version)
 
 	default:
@@ -136,7 +135,7 @@ func fetch(ctx context.Context, cfg sink.SinkConfig) (result resource.Resource, 
 	}
 }
 
-func getNewContent(cfg sink.SinkConfig, result resource.Resource) string {
+func getNewContent(cfg config.SinkConfig, result resource.Resource) string {
 	// If we have templates get the new value from rendering them
 	if cfg.Template != "" || cfg.TemplatePath != "" {
 		if cfg.Template != "" {
@@ -152,7 +151,7 @@ func getNewContent(cfg sink.SinkConfig, result resource.Resource) string {
 	}
 }
 
-func getOldContent(cfg sink.SinkConfig) string {
+func getOldContent(cfg config.SinkConfig) string {
 	// If path has changed it will not yet exist so return empty string
 	if _, err := os.Stat(cfg.Path); err != nil {
 		if os.IsNotExist(err) {
@@ -169,7 +168,7 @@ func getOldContent(cfg sink.SinkConfig) string {
 	return string(b)
 }
 
-func write(cfg sink.SinkConfig, content string) {
+func write(cfg config.SinkConfig, content string) {
 	log.Printf("Writing %v to %v", cfg.Kind, cfg.Path)
 	f, err := os.Create(cfg.Path)
 

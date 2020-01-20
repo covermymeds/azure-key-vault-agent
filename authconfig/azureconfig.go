@@ -1,5 +1,5 @@
-// package config manages loading configuration from environment and command-line params
-package config
+// package authconfig manages loading configuration from environment and command-line params
+package authconfig
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 )
 
 var (
-	// these are our *global* config settings, to be shared by all packages.
+	// these are our *global* authconfig settings, to be shared by all packages.
 	// each has corresponding public accessors below.
 	// if anything requires a `Set` accessor, that indicates it perhaps
 	// shouldn't be set here, because mutable vars shouldn't be global.

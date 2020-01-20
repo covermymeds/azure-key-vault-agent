@@ -1,37 +1,30 @@
-sinks:
-  - kind: secret
-    path: ./rendered1.txt
+workers:
+  -
+    resources:
+      - kind: secret
+        name: pem-test
+        vaultBaseURL: https://cjohnson-kv.vault.azure.net/
+      - kind: cert
+        name: pem-test
+        vaultBaseURL: https://cjohnson-kv.vault.azure.net/
     frequency: 5s
-    vaultBaseURL: https://cjohnson-kv.vault.azure.net/
-    name: password
-    template: "hello {{. | toJson}}"
-    postChange: echo goodbye
-    preChange: echo hello
-    #version: 1a131058e8934267ae695703367c485d
-  - kind: cert
-    path: ./pem-test-cert.json
+    preChange: restart nginx
+    postChange: echo it worked
+    sinks:
+      - path: ./pem-test.key
+        template: "{{ .Secrets.pem-test.value | toPrivateKey }}"
+      - path: ./pem-test.cert
+        template: "{{ .Secrets.pem-test.value | toCert }}"
+      - path: ./pem-test-metadata.json
+        template: "{{ .Certs.pem-test | toJson }}"
+  -
+    resources:
+      - kind: secret
+        name: password
+        vaultBaseURL: https://cjohnson-kv.vault.azure.net/
     frequency: 5s
-    template: "{{. | toJson}}"
-    vaultBaseURL: https://cjohnson-kv.vault.azure.net/
-    name: pem-test
-    postChange: echo goodbye
-    preChange: echo hello
-    #version: 1a131058e8934267ae695703367c485d
-  - kind: key
-    path: ./pem-test-key.json
-    template: "{{. | toJson}}"
-    frequency: 5s
-    vaultBaseURL: https://cjohnson-kv.vault.azure.net/
-    name: pem-test
-    postChange: echo goodbye
-    preChange: echo hello
-    #version: 1a131058e8934267ae695703367c485d
-  - kind: secret
-    path: ./pem-test-secret.json
-    template: "{{. | toJson}}"
-    frequency: 5s
-    vaultBaseURL: https://cjohnson-kv.vault.azure.net/
-    name: pem-test
-    postChange: echo goodbye
-    preChange: echo hello
-    #version: 1a131058e8934267ae695703367c485d
+    preChange: nginx restart
+    sinks:
+      - path: ./password
+        template: "{{ .Secrets.password.Value }}"
+        vaultBaseURL: https://cjohnson-kv.vault.azure.net/
