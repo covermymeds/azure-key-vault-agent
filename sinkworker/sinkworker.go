@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/chrisjohnson/azure-key-vault-agent/certs"
+	"github.com/chrisjohnson/azure-key-vault-agent/keys"
 	"github.com/chrisjohnson/azure-key-vault-agent/resource"
 	"github.com/chrisjohnson/azure-key-vault-agent/secrets"
 	"github.com/chrisjohnson/azure-key-vault-agent/sink"
@@ -81,8 +82,7 @@ func process(ctx context.Context, cfg sink.SinkConfig) error {
 	if err != nil {
 		return err
 	}
-	log.Print(result.Map())
-	log.Printf("Got resource of kind %v for %v: %v\n", cfg.Kind, cfg.Name, result.String())
+	log.Printf("Got resource of kind %v for %v\n", cfg.Kind, cfg.Name)
 
 	// Get old content
 	oldContent := getOldContent(cfg)
@@ -90,11 +90,8 @@ func process(ctx context.Context, cfg sink.SinkConfig) error {
 	// Get new content
 	newContent := getNewContent(cfg, result)
 
-	// Compare
-	changed := oldContent != newContent
-
 	// If a change was detected run pre/post commands and write the new file
-	if changed {
+	if oldContent != newContent {
 		if cfg.PreChange != "" {
 			err := runCommand(cfg.PreChange)
 			if err != nil {
@@ -126,7 +123,7 @@ func fetch(ctx context.Context, cfg sink.SinkConfig) (result resource.Resource, 
 		result, err = secrets.GetSecret(cfg.VaultBaseURL, cfg.Name, cfg.Version)
 
 	case sink.KeyKind:
-		log.Panicf("Not implemented yet")
+		result, err = keys.GetKey(cfg.VaultBaseURL, cfg.Name, cfg.Version)
 
 	default:
 		log.Panicf("Invalid sink kind: %v\n", cfg.Kind)

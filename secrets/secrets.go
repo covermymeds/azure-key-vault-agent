@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/url"
-	//"reflect"
 	"regexp"
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/2016-10-01/keyvault"
@@ -15,19 +14,6 @@ import (
 )
 
 type Secret keyvault.SecretBundle
-
-func (s Secret) Map() map[string]interface{} {
-	m := make(map[string]interface{})
-	/*
-		v := reflect.ValueOf(m)
-		for i := 0; i < v.NumField(); i++ {
-			log.Println(v.Field(i))
-			//m[v.Field(i)] = v.Field(i).Interface()
-		}
-	*/
-
-	return m
-}
 
 func (s Secret) String() string {
 	return *s.Value
