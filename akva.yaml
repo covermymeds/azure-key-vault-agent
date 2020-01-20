@@ -27,4 +27,3 @@ workers:
     sinks:
       - path: ./password
         template: "{{ .Secrets.password.Value }}"
-        vaultBaseURL: https://cjohnson-kv.vault.azure.net/

@@ -2,13 +2,12 @@ package configparser
 
 import (
 	"github.com/chrisjohnson/azure-key-vault-agent/config"
+	"github.com/go-playground/validator/v10"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"strconv"
 	"time"
-
-	"github.com/go-playground/validator/v10"
-	"gopkg.in/yaml.v2"
 )
 
 var validate *validator.Validate
@@ -37,20 +36,22 @@ func ParseConfig(path string) []config.WorkerConfig {
 func validateWorkerConfigs(workerConfigs []config.WorkerConfig) {
 	validate = validator.New()
 
-	for i, sinkConfig := range workerConfigs {
-		err := validate.Struct(sinkConfig)
+	for i, workerConfig := range workerConfigs {
+		err := validate.Struct(workerConfig)
 
 		// Convert human readable time and save into TimeFrequency
-		workerConfigs[i].TimeFrequency = frequencyConverter(sinkConfig.Frequency)
+		workerConfigs[i].TimeFrequency = frequencyConverter(workerConfig.Frequency)
 		if err != nil {
 			log.Panicf("error: %v", err)
 		}
 
-		// TODO validate sink config for worker
-		// Ensure that Template and Template Path are not both defined
-		//if sinkConfig.Template != "" && sinkConfig.TemplatePath != "" {
-		//	log.Panic("Template and TemplatePath cannot both be defined")
-		//}
+		// Check each sinkConfig in the workerConfig
+		for _, sinkConfig := range workerConfig.Sinks {
+			// Ensure that Template and Template Path are not both defined
+			if sinkConfig.Template != "" && sinkConfig.TemplatePath != "" {
+				log.Panic("Template and TemplatePath cannot both be defined")
+			}
+		}
 	}
 }
 
