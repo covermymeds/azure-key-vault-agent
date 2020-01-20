@@ -14,4 +14,3 @@ type ResourceConfig struct {
 	Name         string       `yaml:"name,omitempty" validate:"required"`
 	Version      string       `yaml:"version,omitempty"`
 }
-

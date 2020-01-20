@@ -9,7 +9,7 @@ import (
 	"text/template"
 )
 
-func InlineTemplate(inline string, path string, resource resource.Resource) string {
+func InlineTemplate(inline string, path string, resource resource.ResourceMap) string {
 	log.Printf("Parsing inline template")
 	// Read in the template
 	t := template.Must(template.New("inline").Funcs(sprig.TxtFuncMap()).Parse(inline))
@@ -25,7 +25,7 @@ func InlineTemplate(inline string, path string, resource resource.Resource) stri
 	return result
 }
 
-func TemplateFile(tpath string, path string, resource resource.Resource) string {
+func TemplateFile(tpath string, path string, resource resource.ResourceMap) string {
 	log.Printf("Parsing template file %v", tpath)
 	// Read in the template file
 	t := template.Must(template.New(filepath.Base(tpath)).Funcs(sprig.TxtFuncMap()).ParseFiles(tpath))

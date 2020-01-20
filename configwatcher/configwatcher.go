@@ -5,6 +5,8 @@ import (
 	"log"
 
 	"github.com/chrisjohnson/azure-key-vault-agent/configparser"
+	"github.com/chrisjohnson/azure-key-vault-agent/sinkworker"
+
 	"github.com/fsnotify/fsnotify"
 )
 
@@ -36,17 +38,14 @@ func Watcher(path string) {
 
 func parseAndStartWorkers(path string) context.CancelFunc {
 	// Create background context for workers
-	//ctx, cancel := context.WithCancel(context.Background())
-	_, cancel := context.WithCancel(context.Background())
+	ctx, cancel := context.WithCancel(context.Background())
 
-	// Parse authconfig file and start workers
+	// Parse config file and start workers
 	workerConfigs := configparser.ParseConfig(path)
-	log.Print(workerConfigs)
-	/*
-	for _, sinkConfig := range sinkConfigs {
-		go sinkworker.Worker(ctx, sinkConfig)
+	for _, workerConfig := range workerConfigs {
+		go sinkworker.Worker(ctx, workerConfig)
 	}
-	 */
+
 	return cancel
 }
 
