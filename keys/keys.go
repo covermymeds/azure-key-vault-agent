@@ -10,7 +10,7 @@ import (
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/2016-10-01/keyvault"
 
-	"github.com/chrisjohnson/azure-key-vault-agent/config"
+	"github.com/chrisjohnson/azure-key-vault-agent/authconfig"
 	"github.com/chrisjohnson/azure-key-vault-agent/iam"
 )
 
@@ -43,7 +43,7 @@ func newClient() keyvault.BaseClient {
 		log.Panicf("Error authorizing: %v\n", err.Error())
 	}
 	client.Authorizer = a
-	client.AddToUserAgent(config.UserAgent())
+	client.AddToUserAgent(authconfig.UserAgent())
 	return client
 }
 

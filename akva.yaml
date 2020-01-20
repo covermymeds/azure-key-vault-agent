@@ -1,37 +1,29 @@
-sinks:
-  - kind: secret
-    path: ./rendered1.txt
+workers:
+  -
+    resources:
+      - kind: secret
+        name: cjohnson-test
+        vaultBaseURL: https://cjohnson-kv.vault.azure.net/
+        version: latest
+      - kind: cert
+        name: cjohnson-test
+        vaultBaseURL: https://cjohnson-kv.vault.azure.net/
+        version: latest
     frequency: 5s
-    vaultBaseURL: https://cjohnson-kv.vault.azure.net/
-    name: password
-    template: "hello {{. | toJson}}"
-    postChange: echo goodbye
-    preChange: echo hello
-    #version: 1a131058e8934267ae695703367c485d
-  - kind: cert
-    path: ./pem-test-cert.json
+    preChange: restart nginx
+    postChange: echo it worked
+    sinks:
+      - path: ./private.key
+        template: "{{ .secrets.cjohnson-test.value | toPrivateKey }}"
+      - path: ./thing.cert
+        template: "{{ .secrets.cjohnson-test.value | toCert }}"
+  -
+    resources:
+      - kind: secret
+        name: cjohnson-other-secret
     frequency: 5s
-    template: "{{. | toJson}}"
-    vaultBaseURL: https://cjohnson-kv.vault.azure.net/
-    name: pem-test
-    postChange: echo goodbye
-    preChange: echo hello
-    #version: 1a131058e8934267ae695703367c485d
-  - kind: key
-    path: ./pem-test-key.json
-    template: "{{. | toJson}}"
-    frequency: 5s
-    vaultBaseURL: https://cjohnson-kv.vault.azure.net/
-    name: pem-test
-    postChange: echo goodbye
-    preChange: echo hello
-    #version: 1a131058e8934267ae695703367c485d
-  - kind: secret
-    path: ./pem-test-secret.json
-    template: "{{. | toJson}}"
-    frequency: 5s
-    vaultBaseURL: https://cjohnson-kv.vault.azure.net/
-    name: pem-test
-    postChange: echo goodbye
-    preChange: echo hello
-    #version: 1a131058e8934267ae695703367c485d
+    preChange: nginx restart
+    sinks:
+      - path: ./app.json
+        template: "{{ .secrets.cjohnson-other-secret.value | toJson }}"
+        vaultBaseURL: https://cjohnson-kv.vault.azure.net/

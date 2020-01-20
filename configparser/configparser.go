@@ -1,12 +1,12 @@
 package configparser
 
 import (
+	"github.com/chrisjohnson/azure-key-vault-agent/config"
 	"io/ioutil"
 	"log"
 	"strconv"
 	"time"
 
-	"github.com/chrisjohnson/azure-key-vault-agent/sink"
 	"github.com/go-playground/validator/v10"
 	"gopkg.in/yaml.v2"
 )
@@ -14,39 +14,43 @@ import (
 var validate *validator.Validate
 
 type Config struct {
-	Sinks []sink.SinkConfig `yaml: "sinks, omitempty"`
+	Workers []config.WorkerConfig
 }
 
-func ParseConfig(path string) []sink.SinkConfig {
+func ParseConfig(path string) []config.WorkerConfig {
 	config := Config{}
 	data, err := ioutil.ReadFile(path)
 
 	if err != nil {
-		log.Panicf("Error reading config %v: %v", path, err)
+		log.Panicf("Error reading authconfig %v: %v", path, err)
 	}
 
 	err = yaml.Unmarshal([]byte(data), &config)
 	if err != nil {
 		log.Panicf("Error unmarshalling yaml: %v", err)
 	}
-	validateSinkConfigs(config.Sinks)
-	return config.Sinks
+
+	validateWorkerConfigs(config.Workers)
+	return config.Workers
 }
 
-func validateSinkConfigs(sinkConfigs []sink.SinkConfig) {
+func validateWorkerConfigs(workerConfigs []config.WorkerConfig) {
 	validate = validator.New()
 
-	for i, sinkConfig := range sinkConfigs {
+	for i, sinkConfig := range workerConfigs {
 		err := validate.Struct(sinkConfig)
-		sinkConfigs[i].TimeFrequency = frequencyConverter(sinkConfig.Frequency)
+
+		// Convert human readable time and save into TimeFrequency
+		workerConfigs[i].TimeFrequency = frequencyConverter(sinkConfig.Frequency)
 		if err != nil {
 			log.Panicf("error: %v", err)
 		}
 
+		// TODO validate sink config for worker
 		// Ensure that Template and Template Path are not both defined
-		if sinkConfig.Template != "" && sinkConfig.TemplatePath != "" {
-			log.Panic("Template and TemplatePath cannot both be defined")
-		}
+		//if sinkConfig.Template != "" && sinkConfig.TemplatePath != "" {
+		//	log.Panic("Template and TemplatePath cannot both be defined")
+		//}
 	}
 }
 

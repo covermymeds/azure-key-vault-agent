@@ -1,4 +1,4 @@
-package config
+package authconfig
 
 import (
 	"fmt"
@@ -16,8 +16,8 @@ func ParseEnvironment() error {
 	azureEnv, _ := azure.EnvironmentFromName("AzurePublicCloud") // shouldn't fail
 	authorizationServerURL = azureEnv.ActiveDirectoryEndpoint
 
-	// AZURE_GROUP_NAME and `config.GroupName()` are deprecated.
-	// Use AZURE_BASE_GROUP_NAME and `config.GenerateGroupName()` instead.
+	// AZURE_GROUP_NAME and `authconfig.GroupName()` are deprecated.
+	// Use AZURE_BASE_GROUP_NAME and `authconfig.GenerateGroupName()` instead.
 	groupName = envy.Get("AZURE_GROUP_NAME", "azure-go-samples")
 	baseGroupName = envy.Get("AZURE_BASE_GROUP_NAME", groupName)
 
