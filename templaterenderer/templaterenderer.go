@@ -224,6 +224,6 @@ func pemChainFromPem(data string) string {
 		}
 	}
 
-	//TODO make sure the chain is in the right order - each cert certifies the one after it
+	//TODO make sure the chain is in the right order - each cert certifies the one preceding it
 	return chain.String()
 }
