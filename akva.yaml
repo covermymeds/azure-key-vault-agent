@@ -8,22 +8,22 @@ workers:
         name: pem-test
         vaultBaseURL: https://cjohnson-kv.vault.azure.net/
     frequency: 5s
-    preChange: restart nginx
+    preChange: echo restart nginx
     postChange: echo it worked
     sinks:
       - path: ./pem-test.key
-        template: "{{ .Secrets.pem-test.value | toPrivateKey }}"
+        template: '{{ privateKey "pem-test" }}'
       - path: ./pem-test.cert
-        template: "{{ .Secrets.pem-test.value | toCert }}"
+        template: '{{ cert "pem-test" }}'
       - path: ./pem-test-metadata.json
-        template: "{{ .Certs.pem-test | toJson }}"
+        template: '{{ index .Certs "pem-test" | toJson }}'
   -
     resources:
       - kind: secret
         name: password
         vaultBaseURL: https://cjohnson-kv.vault.azure.net/
     frequency: 5s
-    preChange: nginx restart
+    preChange: echo nginx restart
     sinks:
       - path: ./password
-        template: "{{ .Secrets.password.Value }}"
+        template: '{{ privateKey "password" }}'
