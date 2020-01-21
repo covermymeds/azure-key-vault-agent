@@ -21,5 +21,6 @@ require (
 	github.com/jpillora/backoff v1.0.0
 	github.com/marstr/randname v0.0.0-20181206212954-d5b0f288ab8c
 	github.com/mitchellh/copystructure v1.0.0 // indirect
+	golang.org/x/crypto v0.0.0-20200117160349-530e935923ad
 	gopkg.in/yaml.v2 v2.2.7
 )
