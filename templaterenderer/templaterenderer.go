@@ -60,7 +60,23 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 			}
 			return cert
 		},
-		//TODO "chain" function to return the issuing chain
+		"chain": func(name string) interface{} {
+			value, ok := resourceMap.Secrets[name]
+			chain := ""
+			if ok {
+				switch contentType := *value.ContentType; contentType {
+				case "application/x-pem-file":
+					chain = pemChainFromPem(*value.Value)
+				case "application/x-pkcs12":
+					chain = pemChainFromPkcs12(*value.Value)
+				default:
+					log.Panicf("Got unexpected content type: %v", contentType)
+				}
+			} else {
+				log.Panicf("cert lookup failed: Expected a Secret with name %v\n", name)
+			}
+			return chain
+		},
 	}
 
 	// Init the template
@@ -156,18 +172,58 @@ func pemCertFromPem(data string) string {
 		log.Panicf("Error generating X509KeyPair: %v", err)
 	}
 
-	// Get the first certificate bytes
-	var leaf []byte
-	if len(certAndKey.Certificate) > 0 {
-		leaf = certAndKey.Certificate[0]
-	} else {
-		log.Panic("Pem data did not produce any certificates")
+	leaf, err := x509.ParseCertificate(certAndKey.Certificate[0])
+	if err != nil {
+		log.Panic(err)
 	}
+
 	// Encode just the leaf cert as pem
 	var certPem bytes.Buffer
-	if err := pem.Encode(&certPem, &pem.Block{Type: "CERTIFICATE", Bytes: leaf}); err != nil {
+	if err := pem.Encode(&certPem, &pem.Block{Type: "CERTIFICATE", Bytes: leaf.Raw}); err != nil {
 		log.Panicf("Failed to write data: %s", err)
 	}
 
 	return certPem.String()
+}
+
+func pemChainFromPkcs12(b64pkcs12 string) string {
+	log.Print("Getting chain from PKCS12 data")
+	p12, _ := base64.StdEncoding.DecodeString(b64pkcs12)
+
+	// Get the PEM Blocks
+	blocks, err := pkcs12.ToPEM(p12, "")
+	if err != nil {
+		panic(err)
+	}
+
+	// Append all PEM Blocks together
+	var pemData []byte
+	for _, b := range blocks {
+		pemData = append(pemData, pem.EncodeToMemory(b)...)
+	}
+
+	return pemChainFromPem(string(pemData))
+}
+
+func pemChainFromPem(data string) string {
+	log.Print("Getting chain from PEM data")
+	pemBytes := []byte(data)
+
+	// Use tls lib to construct tls certificate and key object from PEM data
+	// The tls.X509KeyPair function is smart enough to parse combined cert and key pem data
+	certAndKey, err := tls.X509KeyPair(pemBytes, pemBytes)
+	if err != nil {
+		log.Panicf("Error generating X509KeyPair: %v", err)
+	}
+
+	// The chain is the rest of the certs
+	var chain bytes.Buffer
+	for _, issuerBytes := range certAndKey.Certificate[1:] {
+		if err := pem.Encode(&chain, &pem.Block{Type: "CERTIFICATE", Bytes: issuerBytes}); err != nil {
+			log.Panicf("Failed to write data: %s", err)
+		}
+	}
+
+	//TODO make sure the chain is in the right order - each cert certifies the one after it
+	return chain.String()
 }
