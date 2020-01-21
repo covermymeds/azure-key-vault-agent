@@ -13,7 +13,7 @@ import (
 	"github.com/chrisjohnson/azure-key-vault-agent/keys"
 	"github.com/chrisjohnson/azure-key-vault-agent/resource"
 	"github.com/chrisjohnson/azure-key-vault-agent/secrets"
-	"github.com/chrisjohnson/azure-key-vault-agent/templateparser"
+	"github.com/chrisjohnson/azure-key-vault-agent/templaterenderer"
 
 	"github.com/jpillora/backoff"
 )
@@ -158,10 +158,10 @@ func getNewContent(cfg config.SinkConfig, resources resource.ResourceMap) string
 	if cfg.Template != "" || cfg.TemplatePath != "" {
 		if cfg.Template != "" {
 			// Execute inline template
-			return templateparser.InlineTemplate(cfg.Template, cfg.Path, resources)
+			return templaterenderer.RenderInline(cfg.Template, resources)
 		} else {
 			// Execute template file
-			return templateparser.TemplateFile(cfg.TemplatePath, cfg.Path, resources)
+			return templaterenderer.RenderFile(cfg.TemplatePath, resources)
 		}
 	} else {
 		// Just return the string
