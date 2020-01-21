@@ -46,17 +46,17 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 		},
 	}
 
-	// Read in the template
+	// Init the template
 	t, err := template.New("template").Funcs(helpers).Funcs(sprig.TxtFuncMap()).Parse(templateContents)
 	if err != nil {
 		log.Panicf("Error parsing template:\n%v\nError:\n%v\n", templateContents, err)
 	}
 
-	var buf bytes.Buffer
 	// Execute the template
+	var buf bytes.Buffer
 	err = t.Execute(&buf, resourceMap)
 	if err != nil {
-		log.Panicf("Error executing template:\n%v\nResource:\n%v\nError:\n%v\n", templateContents, resourceMap, err)
+		log.Panicf("Error executing template:\n%v\nResources:\n%v\nError:\n%v\n", templateContents, resourceMap, err)
 	}
 
 	result := buf.String()

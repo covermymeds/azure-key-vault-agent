@@ -20,10 +20,10 @@ import (
 
 const RetryBreakPoint = 60
 
-func Worker(ctx context.Context, cfg config.WorkerConfig) {
+func Worker(ctx context.Context, workerConfig config.WorkerConfig) {
 	b := &backoff.Backoff{
-		Min:    time.Duration(cfg.TimeFrequency),
-		Max:    time.Duration(cfg.TimeFrequency) * 10,
+		Min:    time.Duration(workerConfig.TimeFrequency),
+		Max:    time.Duration(workerConfig.TimeFrequency) * 10,
 		Factor: 2,
 		Jitter: true,
 	}
@@ -31,11 +31,11 @@ func Worker(ctx context.Context, cfg config.WorkerConfig) {
 	d := b.Duration()
 	ticker := time.NewTicker(d)
 
-	log.Printf("Starting worker with refresh %v\n", d)
+	log.Printf("Starting worker with frequency %v\n", d)
 
-	err := process(ctx, cfg)
+	err := Process(ctx, workerConfig)
 	if err != nil {
-		log.Printf("Failed to get resource: %v\n", err)
+		log.Printf("Failed to get resource(s): %v\n", err)
 	}
 
 	for {
@@ -45,35 +45,33 @@ func Worker(ctx context.Context, cfg config.WorkerConfig) {
 			log.Println("Shutting down worker")
 			return
 		case <-ticker.C:
-			err := process(ctx, cfg)
+			err := Process(ctx, workerConfig)
 			if err != nil {
-				if cfg.TimeFrequency > RetryBreakPoint {
+				if workerConfig.TimeFrequency > RetryBreakPoint {
 					// For long frequencies, we should set up an explicit retry (with backoff)
+					// For short frequencies, we can just wait for the next natural tick
 					d := b.Duration()
 					ticker = time.NewTicker(d)
-					log.Println(err)
-					log.Printf("Failed to get resource(s), will retry in %v\n", d)
-				} else {
-					// For short frequencies, we can just wait for the next natural tick
-					log.Printf("Failed to get resource: %v\n", err)
 				}
+				log.Println(err)
+				log.Printf("Failed to get resource(s), will retry in %v\n", d)
 			} else {
 				// Reset the ticker once we've got a good result
-				if cfg.TimeFrequency > RetryBreakPoint {
+				if workerConfig.TimeFrequency > RetryBreakPoint {
 					b.Reset()
 					d := b.Duration()
 					ticker = time.NewTicker(d)
 				}
-				log.Printf("Success for resource(s), will try next in %v\n", d)
+				log.Printf("Successfully fetched resource(s), will try next in %v\n", d)
 			}
 		}
 	}
 }
 
-func process(ctx context.Context, cfg config.WorkerConfig) error {
+func Process(ctx context.Context, workerConfig config.WorkerConfig) error {
 	resources := resource.ResourceMap{make(map[string]certs.Cert), make(map[string]secrets.Secret), make(map[string]keys.Key)}
 
-	for _, resourceConfig := range cfg.Resources {
+	for _, resourceConfig := range workerConfig.Resources {
 		switch resourceConfig.Kind {
 		case config.CertKind:
 			result, err := certs.GetCert(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
@@ -101,7 +99,7 @@ func process(ctx context.Context, cfg config.WorkerConfig) error {
 		}
 	}
 
-	for _, sinkConfig := range cfg.Sinks {
+	for _, sinkConfig := range workerConfig.Sinks {
 		// Get old content
 		oldContent := getOldContent(sinkConfig)
 
@@ -110,8 +108,9 @@ func process(ctx context.Context, cfg config.WorkerConfig) error {
 
 		// If a change was detected run pre/post commands and write the new file
 		if oldContent != newContent {
-			if cfg.PreChange != "" {
-				err := runCommand(cfg.PreChange)
+			log.Printf("Change detected for %v\n", sinkConfig.Path)
+			if workerConfig.PreChange != "" {
+				err := runCommand(workerConfig.PreChange)
 				if err != nil {
 					log.Printf("PreChange command errored: %v", err)
 				}
@@ -119,8 +118,8 @@ func process(ctx context.Context, cfg config.WorkerConfig) error {
 
 			write(sinkConfig, newContent)
 
-			if cfg.PostChange != "" {
-				err := runCommand(cfg.PostChange)
+			if workerConfig.PostChange != "" {
+				err := runCommand(workerConfig.PostChange)
 				if err != nil {
 					log.Printf("PostChange command errored: %v", err)
 				}
@@ -131,19 +130,19 @@ func process(ctx context.Context, cfg config.WorkerConfig) error {
 	return nil
 }
 
-func fetch(ctx context.Context, cfg config.ResourceConfig) (result resource.Resource, err error) {
-	switch cfg.Kind {
+func fetch(ctx context.Context, resourceConfig config.ResourceConfig) (result resource.Resource, err error) {
+	switch resourceConfig.Kind {
 	case config.CertKind:
-		result, err = certs.GetCert(cfg.VaultBaseURL, cfg.Name, cfg.Version)
+		result, err = certs.GetCert(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
 
 	case config.SecretKind:
-		result, err = secrets.GetSecret(cfg.VaultBaseURL, cfg.Name, cfg.Version)
+		result, err = secrets.GetSecret(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
 
 	case config.KeyKind:
-		result, err = keys.GetKey(cfg.VaultBaseURL, cfg.Name, cfg.Version)
+		result, err = keys.GetKey(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
 
 	default:
-		log.Panicf("Invalid sink kind: %v\n", cfg.Kind)
+		log.Panicf("Invalid sink kind: %v\n", resourceConfig.Kind)
 	}
 
 	if err != nil {
@@ -153,32 +152,33 @@ func fetch(ctx context.Context, cfg config.ResourceConfig) (result resource.Reso
 	}
 }
 
-func getNewContent(cfg config.SinkConfig, resources resource.ResourceMap) string {
+func getNewContent(sinkConfig config.SinkConfig, resources resource.ResourceMap) string {
 	// If we have templates get the new value from rendering them
-	if cfg.Template != "" || cfg.TemplatePath != "" {
-		if cfg.Template != "" {
+	if sinkConfig.Template != "" || sinkConfig.TemplatePath != "" {
+		if sinkConfig.Template != "" {
 			// Execute inline template
-			return templaterenderer.RenderInline(cfg.Template, resources)
+			return templaterenderer.RenderInline(sinkConfig.Template, resources)
 		} else {
 			// Execute template file
-			return templaterenderer.RenderFile(cfg.TemplatePath, resources)
+			return templaterenderer.RenderFile(sinkConfig.TemplatePath, resources)
 		}
 	} else {
 		// Just return the string
+		// TODO: If there is only one resource being requested, call .String() on it
 		return "TODO"
 	}
 }
 
-func getOldContent(cfg config.SinkConfig) string {
+func getOldContent(sinkConfig config.SinkConfig) string {
 	// If path has changed it will not yet exist so return empty string
-	if _, err := os.Stat(cfg.Path); err != nil {
+	if _, err := os.Stat(sinkConfig.Path); err != nil {
 		if os.IsNotExist(err) {
 			return ""
 		}
 	}
 
 	// Read the contents of the current file into a string
-	b, err := ioutil.ReadFile(cfg.Path)
+	b, err := ioutil.ReadFile(sinkConfig.Path)
 	if err != nil {
 		log.Panic(err)
 	}
@@ -186,8 +186,8 @@ func getOldContent(cfg config.SinkConfig) string {
 	return string(b)
 }
 
-func write(cfg config.SinkConfig, content string) {
-	f, err := os.Create(cfg.Path)
+func write(sinkConfig config.SinkConfig, content string) {
+	f, err := os.Create(sinkConfig.Path)
 
 	if err != nil {
 		log.Panic(err)
@@ -206,6 +206,10 @@ func runCommand(command string) error {
 	log.Printf("Executing %v", command)
 	cmd := exec.Command("sh", "-c", command)
 
-	err := cmd.Run()
+	stdoutStderr, err := cmd.CombinedOutput()
+	if stdoutStderr != nil {
+		log.Printf(string(stdoutStderr))
+	}
+
 	return err
 }
