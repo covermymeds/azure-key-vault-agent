@@ -60,6 +60,7 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 			}
 			return cert
 		},
+		//TODO "chain" function to return the issuing chain
 	}
 
 	// Init the template
