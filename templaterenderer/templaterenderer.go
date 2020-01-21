@@ -44,6 +44,7 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 			return privateKey
 		},
 		"cert": func(name string) interface{} {
+			// TODO: If the cert can be found on either a Cert or a Secret, we should handle discovering it from both
 			value, ok := resourceMap.Secrets[name]
 			cert := ""
 			if ok {
