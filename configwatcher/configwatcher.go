@@ -5,7 +5,7 @@ import (
 	"log"
 
 	"github.com/chrisjohnson/azure-key-vault-agent/configparser"
-	"github.com/chrisjohnson/azure-key-vault-agent/sinkworker"
+	"github.com/chrisjohnson/azure-key-vault-agent/worker"
 
 	"github.com/fsnotify/fsnotify"
 )
@@ -43,7 +43,7 @@ func parseAndStartWorkers(path string) context.CancelFunc {
 	// Parse config file and start workers
 	workerConfigs := configparser.ParseConfig(path)
 	for _, workerConfig := range workerConfigs {
-		go sinkworker.Worker(ctx, workerConfig)
+		go worker.Worker(ctx, workerConfig)
 	}
 
 	return cancel

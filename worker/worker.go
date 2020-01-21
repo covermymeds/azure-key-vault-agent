@@ -1,4 +1,4 @@
-package sinkworker
+package worker
 
 import (
 	"context"
