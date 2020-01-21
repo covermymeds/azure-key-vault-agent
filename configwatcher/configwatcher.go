@@ -13,8 +13,7 @@ import (
 func Watcher(path string) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Printf("Error establishing file watcher: %v\n", err)
-		return
+		log.Panicf("Error establishing file watcher: %v\n", err)
 	}
 
 	// If something goes wrong along the way, close the watcher

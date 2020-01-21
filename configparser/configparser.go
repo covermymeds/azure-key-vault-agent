@@ -44,7 +44,7 @@ func validateWorkerConfigs(workerConfigs []config.WorkerConfig) {
 		// Convert human readable time and save into TimeFrequency
 		workerConfigs[i].TimeFrequency = frequencyConverter(workerConfig.Frequency)
 		if err != nil {
-			log.Panicf("error: %v", err)
+			log.Panicf("Error parsing frequency: %v\n", err)
 		}
 
 		// Check each sinkConfig in the workerConfig
