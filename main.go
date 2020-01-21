@@ -2,9 +2,10 @@ package main
 
 import (
 	"flag"
+	"log"
+
 	"github.com/chrisjohnson/azure-key-vault-agent/authconfig"
 	"github.com/chrisjohnson/azure-key-vault-agent/configwatcher"
-	"log"
 )
 
 func init() {

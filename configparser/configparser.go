@@ -1,13 +1,15 @@
 package configparser
 
 import (
-	"github.com/chrisjohnson/azure-key-vault-agent/config"
-	"github.com/go-playground/validator/v10"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"log"
 	"strconv"
 	"time"
+
+	"github.com/chrisjohnson/azure-key-vault-agent/config"
+
+	"github.com/go-playground/validator/v10"
+	"gopkg.in/yaml.v2"
 )
 
 var validate *validator.Validate
@@ -21,7 +23,7 @@ func ParseConfig(path string) []config.WorkerConfig {
 	data, err := ioutil.ReadFile(path)
 
 	if err != nil {
-		log.Panicf("Error reading authconfig %v: %v", path, err)
+		log.Panicf("Error reading config %v: %v", path, err)
 	}
 
 	err = yaml.Unmarshal([]byte(data), &config)
@@ -42,7 +44,7 @@ func validateWorkerConfigs(workerConfigs []config.WorkerConfig) {
 		// Convert human readable time and save into TimeFrequency
 		workerConfigs[i].TimeFrequency = frequencyConverter(workerConfig.Frequency)
 		if err != nil {
-			log.Panicf("error: %v", err)
+			log.Panicf("Error parsing frequency: %v\n", err)
 		}
 
 		// Check each sinkConfig in the workerConfig
