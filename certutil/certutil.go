@@ -152,14 +152,14 @@ func SortedChain(rawChain [][]byte) string {
 	// Sort the graph
 	sorted := g.TopologicalSort()
 
-	// Construct the sorted chain PEM block
-	var chainPem bytes.Buffer
-
 	// If sorted only has one element that must be the leaf and we have no chain to return
 	if len(sorted) == 1 {
 		log.Print("No chain detected in input")
 		return ""
 	}
+
+	// Construct the sorted chain PEM block
+	var chainPem bytes.Buffer
 
 	// If sorted len is greater than 1 we have a chain to parse
 	issuers := sorted[1:]
