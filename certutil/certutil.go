@@ -157,7 +157,6 @@ func SortedChain(rawChain [][]byte) string {
 
 	// If sorted only has one element that must be the leaf and we have no chain to return
 	if len(sorted) == 1 {
-		// TODO should we panic instead?
 		log.Print("No chain detected in input")
 		return ""
 	}
