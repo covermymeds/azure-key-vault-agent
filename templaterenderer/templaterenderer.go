@@ -99,7 +99,6 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 }
 
 func pemPrivateKeyFromPkcs12(b64pkcs12 string) string {
-	log.Print("Getting private key from PKCS12 data")
 	p12, _ := base64.StdEncoding.DecodeString(b64pkcs12)
 
 	// Get the PEM Blocks
@@ -118,7 +117,6 @@ func pemPrivateKeyFromPkcs12(b64pkcs12 string) string {
 }
 
 func pemPrivateKeyFromPem(data string) string {
-	log.Print("Getting private key from PEM data")
 	pemBytes := []byte(data)
 
 	// Use tls lib to construct tls certificate and key object from PEM data
@@ -144,7 +142,6 @@ func pemPrivateKeyFromPem(data string) string {
 }
 
 func pemCertFromPkcs12(b64pkcs12 string) string {
-	log.Print("Getting certificate from PKCS12 data")
 	p12, _ := base64.StdEncoding.DecodeString(b64pkcs12)
 
 	// Get the PEM Blocks
@@ -163,7 +160,6 @@ func pemCertFromPkcs12(b64pkcs12 string) string {
 }
 
 func pemCertFromPem(data string) string {
-	log.Print("Getting certificate from PEM data")
 	pemBytes := []byte(data)
 
 	// Use tls lib to construct tls certificate and key object from PEM data
@@ -188,7 +184,6 @@ func pemCertFromPem(data string) string {
 }
 
 func pemChainFromPkcs12(b64pkcs12 string) string {
-	log.Print("Getting chain from PKCS12 data")
 	p12, _ := base64.StdEncoding.DecodeString(b64pkcs12)
 
 	// Get the PEM Blocks
@@ -207,7 +202,6 @@ func pemChainFromPkcs12(b64pkcs12 string) string {
 }
 
 func pemChainFromPem(data string) string {
-	log.Print("Getting chain from PEM data")
 	pemBytes := []byte(data)
 
 	// Use tls lib to construct tls certificate and key object from PEM data
