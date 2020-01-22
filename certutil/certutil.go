@@ -1,0 +1,172 @@
+package certutil
+
+import (
+	"bytes"
+	"crypto/tls"
+	"crypto/x509"
+	"encoding/base64"
+	"encoding/pem"
+	"github.com/twmb/algoimpl/go/graph"
+	"golang.org/x/crypto/pkcs12"
+	"log"
+)
+
+func PemPrivateKeyFromPkcs12(b64pkcs12 string) string {
+	p12, _ := base64.StdEncoding.DecodeString(b64pkcs12)
+
+	// Get the PEM Blocks
+	blocks, err := pkcs12.ToPEM(p12, "")
+	if err != nil {
+		panic(err)
+	}
+
+	// Append all PEM Blocks together
+	var pemData []byte
+	for _, b := range blocks {
+		pemData = append(pemData, pem.EncodeToMemory(b)...)
+	}
+
+	return PemPrivateKeyFromPem(string(pemData))
+}
+
+func PemPrivateKeyFromPem(data string) string {
+	pemBytes := []byte(data)
+
+	// Use tls lib to construct tls certificate and key object from PEM data
+	// The tls.X509KeyPair function is smart enough to parse combined cert and key pem data
+	certAndKey, err := tls.X509KeyPair(pemBytes, pemBytes)
+	if err != nil {
+		panic(err)
+	}
+
+	// Get parsed private key as PKCS8 data
+	privBytes, err := x509.MarshalPKCS8PrivateKey(certAndKey.PrivateKey)
+	if err != nil {
+		log.Panicf("Unable to marshal private key: %v", err)
+	}
+
+	// Encode just the private key back to PEM and return it
+	var privPem bytes.Buffer
+	if err := pem.Encode(&privPem, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}); err != nil {
+		log.Panicf("Failed to write data: %s", err)
+	}
+
+	return privPem.String()
+}
+
+func PemCertFromPkcs12(b64pkcs12 string) string {
+	p12, _ := base64.StdEncoding.DecodeString(b64pkcs12)
+
+	// Get the PEM Blocks
+	blocks, err := pkcs12.ToPEM(p12, "")
+	if err != nil {
+		panic(err)
+	}
+
+	// Append all PEM Blocks together
+	var pemData []byte
+	for _, b := range blocks {
+		pemData = append(pemData, pem.EncodeToMemory(b)...)
+	}
+
+	return PemCertFromPem(string(pemData))
+}
+
+func PemCertFromPem(data string) string {
+	pemBytes := []byte(data)
+
+	// Use tls lib to construct tls certificate and key object from PEM data
+	// The tls.X509KeyPair function is smart enough to parse combined cert and key pem data
+	certAndKey, err := tls.X509KeyPair(pemBytes, pemBytes)
+	if err != nil {
+		log.Panicf("Error generating X509KeyPair: %v", err)
+	}
+
+	leaf, err := x509.ParseCertificate(certAndKey.Certificate[0])
+	if err != nil {
+		log.Panic(err)
+	}
+
+	// Encode just the leaf cert as pem
+	var certPem bytes.Buffer
+	if err := pem.Encode(&certPem, &pem.Block{Type: "CERTIFICATE", Bytes: leaf.Raw}); err != nil {
+		log.Panicf("Failed to write data: %s", err)
+	}
+
+	return certPem.String()
+}
+
+func PemChainFromPkcs12(b64pkcs12 string) string {
+	p12, _ := base64.StdEncoding.DecodeString(b64pkcs12)
+
+	// Get the PEM Blocks
+	blocks, err := pkcs12.ToPEM(p12, "")
+	if err != nil {
+		panic(err)
+	}
+
+	// Append all PEM Blocks together
+	var pemData []byte
+	for _, b := range blocks {
+		pemData = append(pemData, pem.EncodeToMemory(b)...)
+	}
+
+	return PemChainFromPem(string(pemData))
+}
+
+func PemChainFromPem(data string) string {
+	pemBytes := []byte(data)
+
+	// Use tls lib to construct tls certificate and key object from PEM data
+	// The tls.X509KeyPair function is smart enough to parse combined cert and key pem data
+	certAndKey, err := tls.X509KeyPair(pemBytes, pemBytes)
+	if err != nil {
+		log.Panicf("Error generating X509KeyPair: %v", err)
+	}
+
+	return SortedChain(certAndKey.Certificate)
+}
+
+func SortedChain(rawChain [][]byte) string {
+	g := graph.New(graph.Directed)
+
+	// Make a graph where each node represents a certificate and the key is its subject key identifier
+	certGraph := make(map[string]graph.Node, 0)
+
+	// Construct each certificate in the chain into a full certificate object
+	for _, certBytes := range rawChain {
+		cert, err := x509.ParseCertificate(certBytes)
+		if err != nil {
+			log.Panic("Unable to parse certificate chain")
+		}
+		certGraph[string(cert.SubjectKeyId)] = g.MakeNode()
+		*certGraph[string(cert.SubjectKeyId)].Value = *cert
+	}
+
+	// Make the edges of the graph from child cert to issuer
+	for _, node := range certGraph {
+		cert := (*node.Value).(x509.Certificate)
+		g.MakeEdge(certGraph[string(cert.SubjectKeyId)], certGraph[string(cert.AuthorityKeyId)])
+	}
+
+	// Sort the graph
+	sorted := g.TopologicalSort()
+
+	// Construct the sorted chain PEM block
+	var chain bytes.Buffer
+
+	// If sorted only has one element that must be the leaf and we have no chain to return
+	if len(sorted) == 1 {
+		// TODO should we panic instead?
+		return ""
+	}
+
+	// If sorted len is greater than 1 we have a chain to parse
+	for i := range sorted[1:] {
+		if err := pem.Encode(&chain, &pem.Block{Type: "CERTIFICATE", Bytes: (*sorted[i].Value).(x509.Certificate).Raw}); err != nil {
+			log.Panicf("Failed to write data: %s", err)
+		}
+	}
+
+	return chain.String()
+}
