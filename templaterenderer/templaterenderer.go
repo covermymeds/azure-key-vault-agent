@@ -12,6 +12,7 @@ import (
 	"io/ioutil"
 	"log"
 	"text/template"
+	"github.com/twmb/algoimpl/go/graph"
 )
 
 func RenderFile(path string, resourceMap resource.ResourceMap) string {
@@ -83,7 +84,7 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 	// Init the template
 	t, err := template.New("template").Funcs(helpers).Funcs(sprig.TxtFuncMap()).Parse(templateContents)
 	if err != nil {
-		log.Panicf("Error parsing template:\n%v\nError:\n%v\n", templateContents, err)
+		//log.Panicf("Error parsing template:\n%v\nError:\n%v\n", templateContents, err)
 	}
 
 	// Execute the template
@@ -212,13 +213,56 @@ func pemChainFromPem(data string) string {
 	}
 
 	// The chain is the rest of the certs
+	/*
 	var chain bytes.Buffer
 	for _, issuerBytes := range certAndKey.Certificate[1:] {
 		if err := pem.Encode(&chain, &pem.Block{Type: "CERTIFICATE", Bytes: issuerBytes}); err != nil {
 			log.Panicf("Failed to write data: %s", err)
 		}
 	}
+	 */
 
 	//TODO make sure the chain is in the right order - each cert certifies the one preceding it
+	return sortedChain(certAndKey.Certificate)
+}
+
+func sortedChain(rawChain [][]byte) string {
+	g := graph.New(graph.Directed)
+
+	// Make a graph where each node represents a certificate and the key is its subject key identifier
+	certDict :=  make(map[string]x509.Certificate)
+	certGraph := make(map[string]graph.Node, 0)
+
+	// Construct each certificate in the chain into a full certificate object
+	for _, certBytes := range rawChain {
+		cert, err := x509.ParseCertificate(certBytes)
+		if err != nil {
+			log.Panic("Unable to parse certificate chain")
+		}
+		certGraph[string(cert.SubjectKeyId)] = g.MakeNode()
+		*certGraph[string(cert.SubjectKeyId)].Value = cert.SubjectKeyId
+		certDict[string(cert.SubjectKeyId)] = *cert
+	}
+
+	// Make the edges of the graph from child cert to issuer
+	for _, cert := range certDict {
+		g.MakeEdge(certGraph[string(cert.SubjectKeyId)], certGraph[string(cert.AuthorityKeyId)])
+	}
+
+	sorted := g.TopologicalSort()
+
+	// Construct the sorted chain PEM block
+	var chain bytes.Buffer
+	for i := range sorted {
+		// Convert the value to a string so we can use it for lookups
+		//subjectKeyId := fmt.Sprintf("%v", *sorted[i].Value)
+		subjectKeyIdBytes := (*sorted[i].Value).([]byte)
+		subjectKeyId := string(subjectKeyIdBytes)
+		if err := pem.Encode(&chain, &pem.Block{Type: "CERTIFICATE", Bytes: certDict[subjectKeyId].Raw}); err != nil {
+			log.Panicf("Failed to write data: %s", err)
+		}
+	}
+
+	log.Print(chain.String())
 	return chain.String()
 }
