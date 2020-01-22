@@ -153,20 +153,22 @@ func SortedChain(rawChain [][]byte) string {
 	sorted := g.TopologicalSort()
 
 	// Construct the sorted chain PEM block
-	var chain bytes.Buffer
+	var chainPem bytes.Buffer
 
 	// If sorted only has one element that must be the leaf and we have no chain to return
 	if len(sorted) == 1 {
 		// TODO should we panic instead?
+		log.Print("No chain detected in input")
 		return ""
 	}
 
 	// If sorted len is greater than 1 we have a chain to parse
-	for i := range sorted[1:] {
-		if err := pem.Encode(&chain, &pem.Block{Type: "CERTIFICATE", Bytes: (*sorted[i].Value).(x509.Certificate).Raw}); err != nil {
+	issuers := sorted[1:]
+	for i := range issuers {
+		if err := pem.Encode(&chainPem, &pem.Block{Type: "CERTIFICATE", Bytes: (*issuers[i].Value).(x509.Certificate).Raw}); err != nil {
 			log.Panicf("Failed to write data: %s", err)
 		}
 	}
 
-	return chain.String()
+	return chainPem.String()
 }
