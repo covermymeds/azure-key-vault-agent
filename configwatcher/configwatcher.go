@@ -52,10 +52,12 @@ func doWatch(watcher *fsnotify.Watcher, cancel context.CancelFunc, path string) 
 	for {
 		select {
 		case event, ok := <-watcher.Events:
+			log.Printf("ok: %v", ok)
 			if !ok {
 				continue
 			}
-			if event.Op&fsnotify.Write == fsnotify.Write {
+			log.Printf("event: %v", event)
+			if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Rename == fsnotify.Rename {
 				log.Printf("Config watcher noticed a change to %v\n", event.Name)
 				// Kill workers and start new ones
 				cancel()
