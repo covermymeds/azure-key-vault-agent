@@ -99,30 +99,42 @@ func Process(ctx context.Context, workerConfig config.WorkerConfig) error {
 		}
 	}
 
+	type Change struct {
+		sinkConfig  config.SinkConfig
+		newContents string
+	}
+
+	var changes []Change
 	for _, sinkConfig := range workerConfig.Sinks {
 		// Get old content
-		oldContent := getOldContent(sinkConfig)
+		oldContents := getOldContent(sinkConfig)
 
 		// Get new content
-		newContent := getNewContent(sinkConfig, resources)
+		newContents := getNewContent(sinkConfig, resources)
 
 		// If a change was detected run pre/post commands and write the new file
-		if oldContent != newContent {
+		if oldContents != newContents {
+			changes = append(changes, Change{sinkConfig, newContents})
 			log.Printf("Change detected for %v\n", sinkConfig.Path)
-			if workerConfig.PreChange != "" {
-				err := runCommand(workerConfig.PreChange)
-				if err != nil {
-					log.Printf("PreChange command errored: %v", err)
-				}
+		}
+	}
+
+	if len(changes) > 0 {
+		if workerConfig.PreChange != "" {
+			err := runCommand(workerConfig.PreChange)
+			if err != nil {
+				log.Printf("PreChange command errored: %v", err)
 			}
+		}
 
-			write(sinkConfig, newContent)
+		for _, change := range changes {
+			write(change.sinkConfig, change.newContents)
+		}
 
-			if workerConfig.PostChange != "" {
-				err := runCommand(workerConfig.PostChange)
-				if err != nil {
-					log.Printf("PostChange command errored: %v", err)
-				}
+		if workerConfig.PostChange != "" {
+			err := runCommand(workerConfig.PostChange)
+			if err != nil {
+				log.Printf("PostChange command errored: %v", err)
 			}
 		}
 	}
