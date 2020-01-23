@@ -26,4 +26,4 @@ workers:
     preChange: echo nginx restart
     sinks:
       - path: ./password
-        template: '{{ privateKey "password" }}'
+        template: "{{ .Secrets.password.Value }}"
