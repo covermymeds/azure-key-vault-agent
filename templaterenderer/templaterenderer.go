@@ -22,7 +22,7 @@ func RenderFile(path string, resourceMap resource.ResourceMap) string {
 
 func RenderInline(templateContents string, resourceMap resource.ResourceMap) string {
 	helpers := template.FuncMap{
-		"privateKey": func(name string) interface{} {
+		"privateKey": func(name string) string {
 			value, ok := resourceMap.Secrets[name]
 			privateKey := ""
 			if ok {
@@ -39,7 +39,7 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 			}
 			return privateKey
 		},
-		"cert": func(name string) interface{} {
+		"cert": func(name string) string {
 			// TODO: If the cert can be found on either a Cert or a Secret, we should handle discovering it from both
 			value, ok := resourceMap.Secrets[name]
 			cert := ""
@@ -57,7 +57,7 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 			}
 			return cert
 		},
-		"chain": func(name string) interface{} {
+		"chain": func(name string) string {
 			value, ok := resourceMap.Secrets[name]
 			chain := ""
 			if ok {
