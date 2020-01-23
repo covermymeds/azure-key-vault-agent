@@ -2,6 +2,7 @@ package worker
 
 import (
 	"context"
+	"errors"
 	"io/ioutil"
 	"log"
 	"os"
@@ -18,7 +19,7 @@ import (
 	"github.com/jpillora/backoff"
 )
 
-const RetryBreakPoint = 60
+const RetryBreakPoint = 1 * time.Second
 
 func Worker(ctx context.Context, workerConfig config.WorkerConfig) {
 	b := &backoff.Backoff{
@@ -68,7 +69,14 @@ func Worker(ctx context.Context, workerConfig config.WorkerConfig) {
 	}
 }
 
+var count int
+
 func Process(ctx context.Context, workerConfig config.WorkerConfig) error {
+	count++
+	if count > 5 && count < 10 {
+		return errors.New("NETWORK ERROR: Fake error trying to communicate with Azure Key Vault")
+	}
+
 	resources := resource.ResourceMap{make(map[string]certs.Cert), make(map[string]secrets.Secret), make(map[string]keys.Key)}
 
 	for _, resourceConfig := range workerConfig.Resources {
