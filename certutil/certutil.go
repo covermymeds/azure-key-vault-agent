@@ -96,7 +96,7 @@ func PemCertFromPem(data string) string {
 	return certPem.String()
 }
 
-func PemChainFromPkcs12(b64pkcs12 string) string {
+func PemChainFromPkcs12(b64pkcs12 string, justIssuers bool) string {
 	p12, _ := base64.StdEncoding.DecodeString(b64pkcs12)
 
 	// Get the PEM Blocks
@@ -111,10 +111,10 @@ func PemChainFromPkcs12(b64pkcs12 string) string {
 		pemData = append(pemData, pem.EncodeToMemory(b)...)
 	}
 
-	return PemChainFromPem(string(pemData))
+	return PemChainFromPem(string(pemData), justIssuers)
 }
 
-func PemChainFromPem(data string) string {
+func PemChainFromPem(data string, justIssuers bool) string {
 	pemBytes := []byte(data)
 
 	// Use tls lib to construct tls certificate and key object from PEM data
@@ -124,10 +124,10 @@ func PemChainFromPem(data string) string {
 		log.Panicf("Error generating X509KeyPair: %v", err)
 	}
 
-	return SortedChain(certAndKey.Certificate)
+	return SortedChain(certAndKey.Certificate, justIssuers)
 }
 
-func SortedChain(rawChain [][]byte) string {
+func SortedChain(rawChain [][]byte, justIssuers bool) string {
 	g := graph.New(graph.Directed)
 
 	// Make a graph where each node represents a certificate and the key is its subject key identifier
@@ -162,7 +162,12 @@ func SortedChain(rawChain [][]byte) string {
 	var chainPem bytes.Buffer
 
 	// If sorted len is greater than 1 we have a chain to parse
-	issuers := sorted[1:]
+	// Check if we want just the issuers or the full chain
+	issuers := sorted
+	if justIssuers {
+		issuers = sorted[1:]
+	}
+
 	for i := range issuers {
 		if err := pem.Encode(&chainPem, &pem.Block{Type: "CERTIFICATE", Bytes: (*issuers[i].Value).(x509.Certificate).Raw}); err != nil {
 			log.Panicf("Failed to write data: %s", err)

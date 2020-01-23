@@ -69,6 +69,8 @@ When you create a Cert in azure key vault, it automatically creates a Secret and
 
 To fetch the private key, you'll need to ensure that the Secret is in your resources section. You will also need to use the built-in `privateKey` and `cert` helpers to parse the blob into its respective pieces.
 
+Note: `cert` will only return the leaf certificate
+
 In the example below, it is assumed you have created a PEM format certificate with the name `pem-test`:
 
 ```yaml
@@ -86,6 +88,19 @@ workers:
       - path: ./pem-test.cert
         template: '{{ cert "pem-test" }}'
 ```
+
+Complete List of Cert Helpers:
+
+`cert` - returns PEM formatted leaf certificate.
+
+`privateKey` - returns PEM formatted private key.
+
+`issuers` - returns sorted issuers in PEM format.
+
+`fullChain` - returns full certificate chain including leaf cert in PEM format.
+
+Note: The `issuers` and `fullChain` helpers will do their best to reconstruct the chain, but can only work with the data
+given.  So if you did not store your certificate with its chain an empty string will be returned.
 
 ### Multiple secrets in a file
 
