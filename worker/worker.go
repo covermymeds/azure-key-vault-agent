@@ -24,7 +24,7 @@ func Worker(ctx context.Context, workerConfig config.WorkerConfig) {
 	b := &backoff.Backoff{
 		Min:    time.Duration(workerConfig.TimeFrequency),
 		Max:    time.Duration(workerConfig.TimeFrequency) * 10,
-		Factor: 2,
+		Factor: 3,
 		Jitter: true,
 	}
 
@@ -50,7 +50,7 @@ func Worker(ctx context.Context, workerConfig config.WorkerConfig) {
 				if workerConfig.TimeFrequency > RetryBreakPoint {
 					// For long frequencies, we should set up an explicit retry (with backoff)
 					// For short frequencies, we can just wait for the next natural tick
-					d := b.Duration()
+					d = b.Duration()
 					ticker = time.NewTicker(d)
 				}
 				log.Println(err)
@@ -59,7 +59,7 @@ func Worker(ctx context.Context, workerConfig config.WorkerConfig) {
 				// Reset the ticker once we've got a good result
 				if workerConfig.TimeFrequency > RetryBreakPoint {
 					b.Reset()
-					d := b.Duration()
+					d = b.Duration()
 					ticker = time.NewTicker(d)
 				}
 				log.Printf("Successfully fetched resource(s), will try next in %v\n", d)
