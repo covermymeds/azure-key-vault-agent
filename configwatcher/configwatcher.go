@@ -55,7 +55,8 @@ func doWatch(watcher *fsnotify.Watcher, cancel context.CancelFunc, path string) 
 			if !ok {
 				continue
 			}
-			if event.Op&fsnotify.Write == fsnotify.Write {
+
+			if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Rename == fsnotify.Rename {
 				log.Printf("Config watcher noticed a change to %v\n", event.Name)
 				// Kill workers and start new ones
 				cancel()
