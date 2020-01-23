@@ -2,13 +2,12 @@ package templaterenderer
 
 import (
 	"bytes"
+	"github.com/Masterminds/sprig"
+	"github.com/chrisjohnson/azure-key-vault-agent/certutil"
+	"github.com/chrisjohnson/azure-key-vault-agent/resource"
 	"io/ioutil"
 	"log"
 	"text/template"
-
-	"github.com/chrisjohnson/azure-key-vault-agent/resource"
-
-	"github.com/Masterminds/sprig"
 )
 
 func RenderFile(path string, resourceMap resource.ResourceMap) string {
@@ -23,26 +22,57 @@ func RenderFile(path string, resourceMap resource.ResourceMap) string {
 
 func RenderInline(templateContents string, resourceMap resource.ResourceMap) string {
 	helpers := template.FuncMap{
-		"privateKey": func(name string) interface{} {
+		"privateKey": func(name string) string {
 			value, ok := resourceMap.Secrets[name]
+			privateKey := ""
 			if ok {
-				// TODO: Transform value to extract the private key using some sort of library that can parse PEM format
-				// TODO: How to handle PKCS12?
+				switch contentType := *value.ContentType; contentType {
+				case "application/x-pem-file":
+					privateKey = certutil.PemPrivateKeyFromPem(*value.Value)
+				case "application/x-pkcs12":
+					privateKey = certutil.PemPrivateKeyFromPkcs12(*value.Value)
+				default:
+					log.Panicf("Got unexpected content type: %v", contentType)
+				}
 			} else {
 				log.Panicf("privateKey lookup failed: Expected a Secret with name %v\n", name)
 			}
-			return value
+			return privateKey
 		},
-		"cert": func(name string) interface{} {
-			value, ok := resourceMap.Secrets[name]
+		"cert": func(name string) string {
 			// TODO: If the cert can be found on either a Cert or a Secret, we should handle discovering it from both
+			value, ok := resourceMap.Secrets[name]
+			cert := ""
 			if ok {
-				// TODO: Transform value to extract the cert using some sort of library that can parse PEM format
-				// TODO: How to handle PKCS12?
+				switch contentType := *value.ContentType; contentType {
+				case "application/x-pem-file":
+					cert = certutil.PemCertFromPem(*value.Value)
+				case "application/x-pkcs12":
+					cert = certutil.PemCertFromPkcs12(*value.Value)
+				default:
+					log.Panicf("Got unexpected content type: %v", contentType)
+				}
 			} else {
 				log.Panicf("cert lookup failed: Expected a Secret with name %v\n", name)
 			}
-			return value
+			return cert
+		},
+		"chain": func(name string) string {
+			value, ok := resourceMap.Secrets[name]
+			chain := ""
+			if ok {
+				switch contentType := *value.ContentType; contentType {
+				case "application/x-pem-file":
+					chain = certutil.PemChainFromPem(*value.Value)
+				case "application/x-pkcs12":
+					chain = certutil.PemChainFromPkcs12(*value.Value)
+				default:
+					log.Panicf("Got unexpected content type: %v", contentType)
+				}
+			} else {
+				log.Panicf("cert lookup failed: Expected a Secret with name %v\n", name)
+			}
+			return chain
 		},
 	}
 
@@ -63,3 +93,4 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 
 	return result
 }
+
