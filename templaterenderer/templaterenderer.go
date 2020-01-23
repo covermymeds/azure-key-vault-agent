@@ -76,20 +76,20 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 		},
 		"fullChain": func(name string) string {
 			value, ok := resourceMap.Secrets[name]
-			issuers := ""
+			fullChain := ""
 			if ok {
 				switch contentType := *value.ContentType; contentType {
 				case "application/x-pem-file":
-					issuers = certutil.PemChainFromPem(*value.Value, false)
+					fullChain = certutil.PemChainFromPem(*value.Value, false)
 				case "application/x-pkcs12":
-					issuers = certutil.PemChainFromPkcs12(*value.Value, false)
+					fullChain = certutil.PemChainFromPkcs12(*value.Value, false)
 				default:
 					log.Panicf("Got unexpected content type: %v", contentType)
 				}
 			} else {
 				log.Panicf("cert lookup failed: Expected a Secret with name %v\n", name)
 			}
-			return issuers
+			return fullChain
 		},
 	}
 
