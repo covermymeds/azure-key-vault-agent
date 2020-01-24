@@ -2,12 +2,11 @@ package configwatcher
 
 import (
 	"context"
-	"log"
-
 	"github.com/chrisjohnson/azure-key-vault-agent/configparser"
 	"github.com/chrisjohnson/azure-key-vault-agent/worker"
-
 	"github.com/fsnotify/fsnotify"
+	"log"
+	"path/filepath"
 )
 
 func Watcher(path string) {
@@ -28,7 +27,7 @@ func Watcher(path string) {
 	// Now that the workers have been started, watch the authconfig file and bounce them if changes happen
 	go doWatch(watcher, cancel, path)
 
-	err = watcher.Add(path)
+	err = watcher.Add(filepath.Dir(path))
 	if err != nil {
 		log.Panicf("Error watching path %v: %v\n", path, err)
 	}
@@ -56,10 +55,11 @@ func doWatch(watcher *fsnotify.Watcher, cancel context.CancelFunc, path string) 
 				continue
 			}
 
-			if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Rename == fsnotify.Rename {
+			if (event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create) && event.Name == path {
 				log.Printf("Config watcher noticed a change to %v\n", event.Name)
-				// Kill workers and start new ones
+				// Kill workers
 				cancel()
+				// Start new workers
 				cancel = parseAndStartWorkers(path)
 			}
 		case err, ok := <-watcher.Errors:
