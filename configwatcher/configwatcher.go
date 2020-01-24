@@ -2,12 +2,12 @@ package configwatcher
 
 import (
 	"context"
-	"log"
-
 	"github.com/chrisjohnson/azure-key-vault-agent/configparser"
 	"github.com/chrisjohnson/azure-key-vault-agent/worker"
-
 	"github.com/fsnotify/fsnotify"
+	"log"
+	"os"
+	"time"
 )
 
 func Watcher(path string) {
@@ -58,8 +58,13 @@ func doWatch(watcher *fsnotify.Watcher, cancel context.CancelFunc, path string) 
 
 			if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Rename == fsnotify.Rename {
 				log.Printf("Config watcher noticed a change to %v\n", event.Name)
-				// Kill workers and start new ones
+				// Kill workers
 				cancel()
+				// Wait for file at path to be available (editors like Vim need to swap)
+				waitForFile(path, 10)
+				// Make a new Watcher
+				Watcher(path)
+				// Start new workers
 				cancel = parseAndStartWorkers(path)
 			}
 		case err, ok := <-watcher.Errors:
@@ -69,5 +74,17 @@ func doWatch(watcher *fsnotify.Watcher, cancel context.CancelFunc, path string) 
 			log.Printf("Config watcher encountered an error for %v: %v\n", path, err)
 			return
 		}
+	}
+}
+
+func waitForFile(path string, retries int){
+	_, err := os.Stat(path)
+	if retries == 0 {
+		log.Panicf("Unable to find file: %v", path)
+	}
+	if os.IsNotExist(err) {
+		log.Printf("Waiting for %v to be ready", path)
+		time.Sleep(1*time.Second)
+		waitForFile(path, retries-1)
 	}
 }
