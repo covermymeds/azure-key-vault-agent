@@ -6,8 +6,7 @@ import (
 	"github.com/chrisjohnson/azure-key-vault-agent/worker"
 	"github.com/fsnotify/fsnotify"
 	"log"
-	"os"
-	"time"
+	"path/filepath"
 )
 
 func Watcher(path string) {
@@ -28,7 +27,7 @@ func Watcher(path string) {
 	// Now that the workers have been started, watch the authconfig file and bounce them if changes happen
 	go doWatch(watcher, cancel, path)
 
-	err = watcher.Add(path)
+	err = watcher.Add(filepath.Dir(path))
 	if err != nil {
 		log.Panicf("Error watching path %v: %v\n", path, err)
 	}
@@ -56,14 +55,10 @@ func doWatch(watcher *fsnotify.Watcher, cancel context.CancelFunc, path string) 
 				continue
 			}
 
-			if event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Rename == fsnotify.Rename {
+			if (event.Op&fsnotify.Write == fsnotify.Write || event.Op&fsnotify.Create == fsnotify.Create) && event.Name == path {
 				log.Printf("Config watcher noticed a change to %v\n", event.Name)
 				// Kill workers
 				cancel()
-				// Wait for file at path to be available (editors like Vim need to swap)
-				waitForFile(path, 10)
-				// Make a new Watcher
-				Watcher(path)
 				// Start new workers
 				cancel = parseAndStartWorkers(path)
 			}
@@ -74,17 +69,5 @@ func doWatch(watcher *fsnotify.Watcher, cancel context.CancelFunc, path string) 
 			log.Printf("Config watcher encountered an error for %v: %v\n", path, err)
 			return
 		}
-	}
-}
-
-func waitForFile(path string, retries int){
-	_, err := os.Stat(path)
-	if retries == 0 {
-		log.Panicf("Unable to find file: %v", path)
-	}
-	if os.IsNotExist(err) {
-		log.Printf("Waiting for %v to be ready", path)
-		time.Sleep(1*time.Second)
-		waitForFile(path, retries-1)
 	}
 }
