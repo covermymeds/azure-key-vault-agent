@@ -2,8 +2,9 @@ package worker
 
 import (
 	"context"
+	"fmt"
 	"io/ioutil"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"os"
 	"os/exec"
 	"time"
@@ -21,6 +22,11 @@ import (
 const RetryBreakPoint = 60
 
 func Worker(ctx context.Context, workerConfig config.WorkerConfig) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Fatalf("Caught Panic In Worker: %v", r)
+		}
+	}()
 	b := &backoff.Backoff{
 		Min:    time.Duration(workerConfig.TimeFrequency),
 		Max:    time.Duration(workerConfig.TimeFrequency) * 10,
@@ -95,7 +101,7 @@ func Process(ctx context.Context, workerConfig config.WorkerConfig) error {
 			resources.Keys[resourceConfig.Name] = result
 
 		default:
-			log.Panicf("Invalid sink kind: %v\n", resourceConfig.Kind)
+			panic(fmt.Sprintf("Invalid sink kind: %v\n", resourceConfig.Kind))
 		}
 	}
 
@@ -154,7 +160,7 @@ func fetch(ctx context.Context, resourceConfig config.ResourceConfig) (result re
 		result, err = keys.GetKey(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
 
 	default:
-		log.Panicf("Invalid sink kind: %v\n", resourceConfig.Kind)
+		panic(fmt.Sprintf("Invalid sink kind: %v\n", resourceConfig.Kind))
 	}
 
 	if err != nil {
@@ -192,7 +198,7 @@ func getOldContent(sinkConfig config.SinkConfig) string {
 	// Read the contents of the current file into a string
 	b, err := ioutil.ReadFile(sinkConfig.Path)
 	if err != nil {
-		log.Panic(err)
+		panic(err)
 	}
 
 	return string(b)
@@ -202,7 +208,7 @@ func write(sinkConfig config.SinkConfig, content string) {
 	f, err := os.Create(sinkConfig.Path)
 
 	if err != nil {
-		log.Panic(err)
+		panic(err)
 	}
 
 	defer f.Close()
@@ -210,7 +216,7 @@ func write(sinkConfig config.SinkConfig, content string) {
 	_, err = f.WriteString(content)
 
 	if err != nil {
-		log.Panic(err)
+		panic(err)
 	}
 }
 

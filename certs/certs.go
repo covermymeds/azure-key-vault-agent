@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"net/url"
 	"regexp"
 
@@ -24,7 +24,7 @@ func newClient() keyvault.BaseClient {
 	client := keyvault.New()
 	a, err := iam.GetKeyvaultAuthorizer()
 	if err != nil {
-		log.Panicf("Error authorizing: %v\n", err.Error())
+		panic(fmt.Sprintf("Error authorizing: %v\n", err.Error()))
 	}
 	client.Authorizer = a
 	client.AddToUserAgent(authconfig.UserAgent())
