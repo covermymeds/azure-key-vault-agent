@@ -19,6 +19,7 @@ require (
 	github.com/huandu/xstrings v1.3.0 // indirect
 	github.com/imdario/mergo v0.3.8 // indirect
 	github.com/jpillora/backoff v1.0.0
+	github.com/luci/luci-go v0.0.0-20200220034857-6a27eb3e318d
 	github.com/marstr/randname v0.0.0-20181206212954-d5b0f288ab8c
 	github.com/mitchellh/copystructure v1.0.0 // indirect
 	github.com/sirupsen/logrus v1.4.2
