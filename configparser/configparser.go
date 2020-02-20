@@ -41,12 +41,12 @@ func validateWorkerConfigs(workerConfigs []config.WorkerConfig) {
 
 	for i, workerConfig := range workerConfigs {
 		err := validate.Struct(workerConfig)
+		if err != nil {
+			panic(fmt.Sprintf("Error parsing worker config: %v\n", err))
+		}
 
 		// Convert human readable time and save into TimeFrequency
 		workerConfigs[i].TimeFrequency = frequencyConverter(workerConfig.Frequency)
-		if err != nil {
-			panic(fmt.Sprintf("Error parsing frequency: %v\n", err))
-		}
 
 		// Check each sinkConfig in the workerConfig
 		for _, sinkConfig := range workerConfig.Sinks {

@@ -2,7 +2,7 @@ package authconfig
 
 import (
 	"fmt"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"strconv"
 
 	"github.com/Azure/go-autorest/autorest/azure"
