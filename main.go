@@ -37,9 +37,9 @@ func init() {
 	fs := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	fs.SetOutput(os.Stdout)
 
-	fs.StringVar(&configFile, "config", "", "Read config from this file")
-	fs.StringVar(&configFile, "c", "", "Read config from this file (shorthand)")
 	fs.BoolVar(&help, "help", false, "Show this help text")
+	fs.StringVar(&configFile, "config", "", "Read config from this `file`")
+	fs.StringVar(&configFile, "c", "", "Read config from this `file` (shorthand)")
 	fs.Var(&output, "output", fmt.Sprintf("Output type (default json). Options are: %v (default json)", outputTypeEnum.Choices()))
 
 	fs.Parse(os.Args[1:])
