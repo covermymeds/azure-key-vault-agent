@@ -1,8 +1,9 @@
 package configparser
 
 import (
+	"fmt"
 	"io/ioutil"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"strconv"
 	"time"
 
@@ -23,12 +24,12 @@ func ParseConfig(path string) []config.WorkerConfig {
 	data, err := ioutil.ReadFile(path)
 
 	if err != nil {
-		log.Panicf("Error reading config %v: %v", path, err)
+		panic(fmt.Sprintf("Error reading config %v: %v", path, err))
 	}
 
 	err = yaml.Unmarshal([]byte(data), &config)
 	if err != nil {
-		log.Panicf("Error unmarshalling yaml: %v", err)
+		panic(fmt.Sprintf("Error unmarshalling yaml: %v", err))
 	}
 
 	validateWorkerConfigs(config.Workers)
@@ -40,18 +41,18 @@ func validateWorkerConfigs(workerConfigs []config.WorkerConfig) {
 
 	for i, workerConfig := range workerConfigs {
 		err := validate.Struct(workerConfig)
+		if err != nil {
+			panic(fmt.Sprintf("Error parsing worker config: %v\n", err))
+		}
 
 		// Convert human readable time and save into TimeFrequency
 		workerConfigs[i].TimeFrequency = frequencyConverter(workerConfig.Frequency)
-		if err != nil {
-			log.Panicf("Error parsing frequency: %v\n", err)
-		}
 
 		// Check each sinkConfig in the workerConfig
 		for _, sinkConfig := range workerConfig.Sinks {
 			// Ensure that Template and Template Path are not both defined
 			if sinkConfig.Template != "" && sinkConfig.TemplatePath != "" {
-				log.Panic("Template and TemplatePath cannot both be defined")
+				panic("Template and TemplatePath cannot both be defined")
 			}
 		}
 	}

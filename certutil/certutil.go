@@ -6,9 +6,10 @@ import (
 	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
+	"fmt"
 	"github.com/twmb/algoimpl/go/graph"
 	"golang.org/x/crypto/pkcs12"
-	"log"
+	log "github.com/sirupsen/logrus"
 )
 
 func PemPrivateKeyFromPkcs12(b64pkcs12 string) string {
@@ -42,13 +43,13 @@ func PemPrivateKeyFromPem(data string) string {
 	// Get parsed private key as PKCS8 data
 	privBytes, err := x509.MarshalPKCS8PrivateKey(certAndKey.PrivateKey)
 	if err != nil {
-		log.Panicf("Unable to marshal private key: %v", err)
+		panic(fmt.Sprintf("Unable to marshal private key: %v", err))
 	}
 
 	// Encode just the private key back to PEM and return it
 	var privPem bytes.Buffer
 	if err := pem.Encode(&privPem, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}); err != nil {
-		log.Panicf("Failed to write data: %s", err)
+		panic(fmt.Sprintf("Failed to write data: %s", err))
 	}
 
 	return privPem.String()
@@ -79,18 +80,18 @@ func PemCertFromPem(data string) string {
 	// The tls.X509KeyPair function is smart enough to parse combined cert and key pem data
 	certAndKey, err := tls.X509KeyPair(pemBytes, pemBytes)
 	if err != nil {
-		log.Panicf("Error generating X509KeyPair: %v", err)
+		panic(fmt.Sprintf("Error generating X509KeyPair: %v", err))
 	}
 
 	leaf, err := x509.ParseCertificate(certAndKey.Certificate[0])
 	if err != nil {
-		log.Panic(err)
+		panic(err)
 	}
 
 	// Encode just the leaf cert as pem
 	var certPem bytes.Buffer
 	if err := pem.Encode(&certPem, &pem.Block{Type: "CERTIFICATE", Bytes: leaf.Raw}); err != nil {
-		log.Panicf("Failed to write data: %s", err)
+		panic(fmt.Sprintf("Failed to write data: %s", err))
 	}
 
 	return certPem.String()
@@ -121,7 +122,7 @@ func PemChainFromPem(data string, justIssuers bool) string {
 	// The tls.X509KeyPair function is smart enough to parse combined cert and key pem data
 	certAndKey, err := tls.X509KeyPair(pemBytes, pemBytes)
 	if err != nil {
-		log.Panicf("Error generating X509KeyPair: %v", err)
+		panic(fmt.Sprintf("Error generating X509KeyPair: %v", err))
 	}
 
 	return SortedChain(certAndKey.Certificate, justIssuers)
@@ -137,7 +138,7 @@ func SortedChain(rawChain [][]byte, justIssuers bool) string {
 	for _, certBytes := range rawChain {
 		cert, err := x509.ParseCertificate(certBytes)
 		if err != nil {
-			log.Panic("Unable to parse certificate chain")
+			panic("Unable to parse certificate chain")
 		}
 		certGraph[string(cert.SubjectKeyId)] = g.MakeNode()
 		*certGraph[string(cert.SubjectKeyId)].Value = *cert
@@ -170,7 +171,7 @@ func SortedChain(rawChain [][]byte, justIssuers bool) string {
 
 	for i := range issuers {
 		if err := pem.Encode(&chainPem, &pem.Block{Type: "CERTIFICATE", Bytes: (*issuers[i].Value).(x509.Certificate).Raw}); err != nil {
-			log.Panicf("Failed to write data: %s", err)
+			panic(fmt.Sprintf("Failed to write data: %s", err))
 		}
 	}
 

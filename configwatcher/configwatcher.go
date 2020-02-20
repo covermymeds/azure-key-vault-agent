@@ -2,17 +2,18 @@ package configwatcher
 
 import (
 	"context"
+	"fmt"
 	"github.com/chrisjohnson/azure-key-vault-agent/configparser"
 	"github.com/chrisjohnson/azure-key-vault-agent/worker"
 	"github.com/fsnotify/fsnotify"
-	"log"
+	log "github.com/sirupsen/logrus"
 	"path/filepath"
 )
 
 func Watcher(path string) {
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
-		log.Panicf("Error establishing file watcher: %v\n", err)
+		panic(fmt.Sprintf("Error establishing file watcher: %v\n", err))
 	}
 
 	// If something goes wrong along the way, close the watcher
@@ -29,7 +30,7 @@ func Watcher(path string) {
 
 	err = watcher.Add(filepath.Dir(path))
 	if err != nil {
-		log.Panicf("Error watching path %v: %v\n", path, err)
+		panic(fmt.Sprintf("Error watching path %v: %v\n", path, err))
 	}
 	<-done // Block until done
 }
@@ -48,6 +49,11 @@ func parseAndStartWorkers(path string) context.CancelFunc {
 }
 
 func doWatch(watcher *fsnotify.Watcher, cancel context.CancelFunc, path string) {
+	defer func() {
+		if r := recover(); r != nil {
+			log.Fatalf("Caught Panic In doWatch: %v", r)
+		}
+	}()
 	for {
 		select {
 		case event, ok := <-watcher.Events:
