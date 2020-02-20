@@ -40,7 +40,7 @@ func newClient() keyvault.BaseClient {
 	client := keyvault.New()
 	a, err := iam.GetKeyvaultAuthorizer()
 	if err != nil {
-		panic(fmt.Sprintf("Error authorizing: %v\n", err.Error()))
+		panic(fmt.Sprintf("Error authorizing: %v", err.Error()))
 	}
 	client.Authorizer = a
 	client.AddToUserAgent(authconfig.UserAgent())
@@ -50,7 +50,7 @@ func newClient() keyvault.BaseClient {
 func GetKey(vaultBaseURL string, keyName string, keyVersion string) (Key, error) {
 	key, err := newClient().GetKey(context.Background(), vaultBaseURL, keyName, keyVersion)
 	if err != nil {
-		log.Printf("Error getting key: %v\n", err.Error())
+		log.Printf("Error getting key: %v", err.Error())
 		return Key{}, err
 	}
 
@@ -62,7 +62,7 @@ func GetKey(vaultBaseURL string, keyName string, keyVersion string) (Key, error)
 func GetKeyByURL(keyURL string) (Key, error) {
 	u, err := url.Parse(keyURL)
 	if err != nil {
-		log.Printf("Failed to parse URL for key: %v\n", err.Error())
+		log.Printf("Failed to parse URL for key: %v", err.Error())
 		return Key{}, err
 	}
 	vaultBaseURL := fmt.Sprintf("%v://%v", u.Scheme, u.Host)
@@ -73,7 +73,7 @@ func GetKeyByURL(keyURL string) (Key, error) {
 
 	result, err := GetKey(vaultBaseURL, keyName, "")
 	if err != nil {
-		log.Printf("Failed to get key from parsed values %v and %v: %v\n", vaultBaseURL, keyName, err.Error())
+		log.Printf("Failed to get key from parsed values %v and %v: %v", vaultBaseURL, keyName, err.Error())
 		return Key{}, err
 	}
 
@@ -84,7 +84,7 @@ func GetKeys(vaultBaseURL string) (results []Key, err error) {
 	max := int32(25)
 	pages, err := newClient().GetKeys(context.Background(), vaultBaseURL, &max)
 	if err != nil {
-		log.Printf("Error getting key: %v\n", err.Error())
+		log.Printf("Error getting key: %v", err.Error())
 		return nil, err
 	}
 
@@ -93,7 +93,7 @@ func GetKeys(vaultBaseURL string) (results []Key, err error) {
 			keyURL := *value.Kid
 			key, err := GetKeyByURL(keyURL)
 			if err != nil {
-				log.Printf("Error loading key contents: %v\n", err.Error())
+				log.Printf("Error loading key contents: %v", err.Error())
 				return nil, err
 			}
 

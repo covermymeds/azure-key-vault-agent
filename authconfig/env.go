@@ -26,12 +26,12 @@ func ParseEnvironment() error {
 	var err error
 	useDeviceFlow, err = strconv.ParseBool(envy.Get("AZURE_USE_DEVICEFLOW", "0"))
 	if err != nil {
-		log.Printf("invalid value specified for AZURE_USE_DEVICEFLOW, disabling\n")
+		log.Printf("invalid value specified for AZURE_USE_DEVICEFLOW, disabling")
 		useDeviceFlow = false
 	}
 	keepResources, err = strconv.ParseBool(envy.Get("AZURE_SAMPLES_KEEP_RESOURCES", "0"))
 	if err != nil {
-		log.Printf("invalid value specified for AZURE_SAMPLES_KEEP_RESOURCES, discarding\n")
+		log.Printf("invalid value specified for AZURE_SAMPLES_KEEP_RESOURCES, discarding")
 		keepResources = false
 	}
 
@@ -39,25 +39,25 @@ func ParseEnvironment() error {
 	// clientID
 	clientID, err = envy.MustGet("AZURE_CLIENT_ID")
 	if err != nil {
-		return fmt.Errorf("expected env vars not provided: %s\n", err)
+		return fmt.Errorf("expected env vars not provided: %s", err)
 	}
 
 	// clientSecret
 	clientSecret, err = envy.MustGet("AZURE_CLIENT_SECRET")
 	if err != nil && useDeviceFlow != true { // don't need a secret for device flow
-		return fmt.Errorf("expected env vars not provided: %s\n", err)
+		return fmt.Errorf("expected env vars not provided: %s", err)
 	}
 
 	// tenantID (AAD)
 	tenantID, err = envy.MustGet("AZURE_TENANT_ID")
 	if err != nil {
-		return fmt.Errorf("expected env vars not provided: %s\n", err)
+		return fmt.Errorf("expected env vars not provided: %s", err)
 	}
 
 	// subscriptionID (ARM)
 	subscriptionID, err = envy.MustGet("AZURE_SUBSCRIPTION_ID")
 	if err != nil {
-		return fmt.Errorf("expected env vars not provided: %s\n", err)
+		return fmt.Errorf("expected env vars not provided: %s", err)
 	}
 
 	return nil
