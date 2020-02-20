@@ -33,6 +33,10 @@ func init() {
 				log.FieldKeyTime: "_timestamp",
 			},
 		})
+	} else {
+		log.SetFormatter(&log.TextFormatter{
+			FullTimestamp: true,
+		})
 	}
 
 	var err error
