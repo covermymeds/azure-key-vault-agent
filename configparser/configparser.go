@@ -2,8 +2,8 @@ package configparser
 
 import (
 	"fmt"
-	"io/ioutil"
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
 	"strconv"
 	"time"
 
@@ -42,7 +42,7 @@ func validateWorkerConfigs(workerConfigs []config.WorkerConfig) {
 	for i, workerConfig := range workerConfigs {
 		err := validate.Struct(workerConfig)
 		if err != nil {
-			panic(fmt.Sprintf("Error parsing worker config: %v\n", err))
+			panic(fmt.Sprintf("Error parsing worker config: %v", err))
 		}
 
 		// Convert human readable time and save into TimeFrequency

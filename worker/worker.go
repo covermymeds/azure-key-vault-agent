@@ -3,8 +3,8 @@ package worker
 import (
 	"context"
 	"fmt"
-	"io/ioutil"
 	log "github.com/sirupsen/logrus"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"time"
@@ -37,11 +37,11 @@ func Worker(ctx context.Context, workerConfig config.WorkerConfig) {
 	d := b.Duration()
 	ticker := time.NewTicker(d)
 
-	log.Printf("Starting worker with frequency %v\n", d)
+	log.Printf("Starting worker with frequency %v", d)
 
 	err := Process(ctx, workerConfig)
 	if err != nil {
-		log.Printf("Failed to get resource(s): %v\n", err)
+		log.Printf("Failed to get resource(s): %v", err)
 	}
 
 	for {
@@ -60,7 +60,7 @@ func Worker(ctx context.Context, workerConfig config.WorkerConfig) {
 					ticker = time.NewTicker(d)
 				}
 				log.Println(err)
-				log.Printf("Failed to get resource(s), will retry in %v\n", d)
+				log.Printf("Failed to get resource(s), will retry in %v", d)
 			} else {
 				// Reset the ticker once we've got a good result
 				if workerConfig.TimeFrequency > RetryBreakPoint {
@@ -68,7 +68,7 @@ func Worker(ctx context.Context, workerConfig config.WorkerConfig) {
 					d = b.Duration()
 					ticker = time.NewTicker(d)
 				}
-				log.Printf("Successfully fetched resource(s), will try next in %v\n", d)
+				log.Printf("Successfully fetched resource(s), will try next in %v", d)
 			}
 		}
 	}
@@ -101,7 +101,7 @@ func Process(ctx context.Context, workerConfig config.WorkerConfig) error {
 			resources.Keys[resourceConfig.Name] = result
 
 		default:
-			panic(fmt.Sprintf("Invalid sink kind: %v\n", resourceConfig.Kind))
+			panic(fmt.Sprintf("Invalid sink kind: %v", resourceConfig.Kind))
 		}
 	}
 
@@ -121,7 +121,7 @@ func Process(ctx context.Context, workerConfig config.WorkerConfig) error {
 		// If a change was detected run pre/post commands and write the new file
 		if oldContents != newContents {
 			changes = append(changes, Change{sinkConfig, newContents})
-			log.Printf("Change detected for %v\n", sinkConfig.Path)
+			log.Printf("Change detected for %v", sinkConfig.Path)
 		}
 	}
 
@@ -160,7 +160,7 @@ func fetch(ctx context.Context, resourceConfig config.ResourceConfig) (result re
 		result, err = keys.GetKey(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
 
 	default:
-		panic(fmt.Sprintf("Invalid sink kind: %v\n", resourceConfig.Kind))
+		panic(fmt.Sprintf("Invalid sink kind: %v", resourceConfig.Kind))
 	}
 
 	if err != nil {

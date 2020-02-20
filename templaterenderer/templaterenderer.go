@@ -35,7 +35,7 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 					panic(fmt.Sprintf("Got unexpected content type: %v", contentType))
 				}
 			} else {
-				panic(fmt.Sprintf("privateKey lookup failed: Expected a Secret with name %v\n", name))
+				panic(fmt.Sprintf("privateKey lookup failed: Expected a Secret with name %v", name))
 			}
 			return privateKey
 		},
@@ -53,7 +53,7 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 					panic(fmt.Sprintf("Got unexpected content type: %v", contentType))
 				}
 			} else {
-				panic(fmt.Sprintf("cert lookup failed: Expected a Secret with name %v\n", name))
+				panic(fmt.Sprintf("cert lookup failed: Expected a Secret with name %v", name))
 			}
 			return cert
 		},
@@ -70,7 +70,7 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 					panic(fmt.Sprintf("Got unexpected content type: %v", contentType))
 				}
 			} else {
-				panic(fmt.Sprintf("cert lookup failed: Expected a Secret with name %v\n", name))
+				panic(fmt.Sprintf("cert lookup failed: Expected a Secret with name %v", name))
 			}
 			return issuers
 		},
@@ -87,7 +87,7 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 					panic(fmt.Sprintf("Got unexpected content type: %v", contentType))
 				}
 			} else {
-				panic(fmt.Sprintf("cert lookup failed: Expected a Secret with name %v\n", name))
+				panic(fmt.Sprintf("cert lookup failed: Expected a Secret with name %v", name))
 			}
 			return fullChain
 		},
@@ -110,4 +110,3 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 
 	return result
 }
-
