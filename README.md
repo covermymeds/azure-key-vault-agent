@@ -45,6 +45,12 @@ The `resources` section is a list of one or more resources to fetch. Each resour
 
 The `sinks` section is a list of one or more files to write to. Each sink has a `path` and either `template` (inline template) or `templatePath` (path to template on the filesystem). The template syntax is golang's [text/template](https://golang.org/pkg/text/template/#hdr-Text_and_spaces) library (with [sprig](https://github.com/Masterminds/sprig) helpers).
 
+`sinks` also support configuring file ownership and permission bits via the `owner`, `group`, and `mode` settings.
+- `owner` and `group` are the names of the respective entity and must both be present
+- `mode` accepts various bases (decimal, octal, hex) - for Octal values (i.e. 0644), You MUST prepend a leading `0` else it will be interpreted as decimal.
+
+If `owner`, `group`, or `mode` are omitted the executing user and umask will be applied.
+
 Each template has access to all of the resources specified in the `resources` section above, separated by kind and resource name. The fields available to you for any given resource can be found by looking at the corresponding source structs:
 
 * [Secret](https://github.com/Azure/azure-sdk-for-go/blob/119eb84d/services/keyvault/2016-10-01/keyvault/models.go#L2287-L2304)
@@ -85,6 +91,9 @@ workers:
     sinks:
       - path: ./pem-test.key
         template: '{{ privateKey "pem-test" }}'
+        owner: myuser
+        group: mygroup
+        mode: 0644
       - path: ./pem-test.cert
         template: '{{ cert "pem-test" }}'
 ```

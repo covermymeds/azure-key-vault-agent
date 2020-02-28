@@ -2,15 +2,15 @@ package configparser
 
 import (
 	"fmt"
+	"github.com/chrisjohnson/azure-key-vault-agent/config"
+	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"os"
+	"os/user"
 	"strconv"
 	"time"
-
-	"github.com/chrisjohnson/azure-key-vault-agent/config"
-
-	"github.com/go-playground/validator/v10"
-	"gopkg.in/yaml.v2"
 )
 
 var validate *validator.Validate
@@ -32,11 +32,11 @@ func ParseConfig(path string) []config.WorkerConfig {
 		panic(fmt.Sprintf("Error unmarshalling yaml: %v", err))
 	}
 
-	validateWorkerConfigs(config.Workers)
+	parseWorkerConfigs(config.Workers)
 	return config.Workers
 }
 
-func validateWorkerConfigs(workerConfigs []config.WorkerConfig) {
+func parseWorkerConfigs(workerConfigs []config.WorkerConfig) {
 	validate = validator.New()
 
 	for i, workerConfig := range workerConfigs {
@@ -49,13 +49,54 @@ func validateWorkerConfigs(workerConfigs []config.WorkerConfig) {
 		workerConfigs[i].TimeFrequency = frequencyConverter(workerConfig.Frequency)
 
 		// Check each sinkConfig in the workerConfig
-		for _, sinkConfig := range workerConfig.Sinks {
-			// Ensure that Template and Template Path are not both defined
-			if sinkConfig.Template != "" && sinkConfig.TemplatePath != "" {
-				panic("Template and TemplatePath cannot both be defined")
-			}
+		for j, sinkConfig := range workerConfig.Sinks {
+			workerConfigs[i].Sinks[j] = parseSinkConfig(sinkConfig)
 		}
 	}
+}
+
+func parseSinkConfig(sinkConfig config.SinkConfig) config.SinkConfig {
+	// Ensure that Template and Template Path are not both defined
+	if sinkConfig.Template != "" && sinkConfig.TemplatePath != "" {
+		panic("Template and TemplatePath cannot both be defined")
+	}
+
+	// Check the Owner and Group for existence
+	if sinkConfig.Owner != "" {
+		u, err := user.Lookup(sinkConfig.Owner)
+		if err != nil {
+			panic(err)
+		}
+
+		uid, err := strconv.ParseUint(u.Uid, 10, 32)
+		if err != nil {
+			panic(err)
+		}
+
+		sinkConfig.UID = uint32(uid)
+	} else {
+		// Default to calling UID
+		sinkConfig.UID = uint32(os.Getuid())
+	}
+
+	if sinkConfig.Group != "" {
+		g, err := user.LookupGroup(sinkConfig.Group)
+		if err != nil {
+			panic(err)
+		}
+
+		gid, err := strconv.ParseUint(g.Gid, 10, 32)
+		if err != nil {
+			panic(err)
+		}
+
+		sinkConfig.GID = uint32(gid)
+	} else {
+		// Default to calling GID
+		sinkConfig.GID = uint32(os.Getgid())
+	}
+
+	return sinkConfig
 }
 
 func frequencyConverter(freq string) time.Duration {

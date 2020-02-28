@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"syscall"
 	"time"
 
 	"github.com/chrisjohnson/azure-key-vault-agent/certs"
@@ -118,8 +119,11 @@ func Process(ctx context.Context, workerConfig config.WorkerConfig) error {
 		// Get new content
 		newContents := getNewContent(sinkConfig, resources)
 
+		// Detect if ownership or mode has changed
+		fileAttributesChanged := getFileAttributesChanged(sinkConfig)
+
 		// If a change was detected run pre/post commands and write the new file
-		if oldContents != newContents {
+		if (oldContents != newContents) || fileAttributesChanged {
 			changes = append(changes, Change{sinkConfig, newContents})
 			log.Printf("Change detected for %v", sinkConfig.Path)
 		}
@@ -204,11 +208,48 @@ func getOldContent(sinkConfig config.SinkConfig) string {
 	return string(b)
 }
 
-func write(sinkConfig config.SinkConfig, content string) {
-	f, err := os.Create(sinkConfig.Path)
+func getFileAttributesChanged(sinkConfig config.SinkConfig) bool {
+	// If path has changed it will not yet exist so count this as a change
+	f, err := os.Stat(sinkConfig.Path)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return true
+		}
+	}
 
+	// Get old owner, group, mode
+	var stat syscall.Stat_t
+	err = syscall.Stat(sinkConfig.Path, &stat)
 	if err != nil {
 		panic(err)
+	}
+
+	oldUid := stat.Uid
+	oldGid := stat.Gid
+	oldMode := f.Mode()
+
+	// Compare for changes
+	if (oldUid != uint32(sinkConfig.UID)) || (oldGid != uint32(sinkConfig.GID)) || (oldMode != sinkConfig.Mode){
+		return true
+	} else {
+		return false
+	}
+}
+
+func write(sinkConfig config.SinkConfig, content string) {
+	f, err := os.Create(sinkConfig.Path)
+	if err != nil {
+		panic(err)
+	}
+
+	// Use the configured owner, group, and permissions if provided
+	err = f.Chown(int(sinkConfig.UID), int(sinkConfig.GID))
+	if err != nil {
+		panic(err)
+	}
+
+	if sinkConfig.Mode != 0 {
+		f.Chmod(sinkConfig.Mode)
 	}
 
 	defer f.Close()
