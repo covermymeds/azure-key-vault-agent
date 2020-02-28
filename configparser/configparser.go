@@ -61,7 +61,7 @@ func parseSinkConfig(sinkConfig config.SinkConfig) config.SinkConfig {
 		panic("Template and TemplatePath cannot both be defined")
 	}
 
-	//Check the Owner and Group for existence
+	// Check the Owner and Group for existence
 	if sinkConfig.Owner != "" {
 		u, err := user.Lookup(sinkConfig.Owner)
 		if err != nil {

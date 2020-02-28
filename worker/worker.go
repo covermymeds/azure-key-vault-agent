@@ -242,7 +242,7 @@ func write(sinkConfig config.SinkConfig, content string) {
 		panic(err)
 	}
 
-	//Use the configured owner, group, and permissions if provided
+	// Use the configured owner, group, and permissions if provided
 	err = f.Chown(int(sinkConfig.UID), int(sinkConfig.GID))
 	if err != nil {
 		panic(err)
