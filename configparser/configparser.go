@@ -2,17 +2,15 @@ package configparser
 
 import (
 	"fmt"
+	"github.com/chrisjohnson/azure-key-vault-agent/config"
+	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"os/user"
 	"strconv"
 	"time"
-
-	"github.com/chrisjohnson/azure-key-vault-agent/config"
-
-	"github.com/go-playground/validator/v10"
-	"gopkg.in/yaml.v2"
 )
 
 var validate *validator.Validate
