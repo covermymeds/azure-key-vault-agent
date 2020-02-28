@@ -1,7 +1,14 @@
 package config
 
+import "os"
+
 type SinkConfig struct {
 	Path         string `yaml:"path,omitempty" validate:"required"`
 	Template     string `yaml:"template,omitempty"`
 	TemplatePath string `yaml:"templatePath,omitempty"`
+	Owner        string `yaml:"owner,omitempty" validate:"required_with=Group"`
+	Group        string `yaml:"group,omitempty" validate:"required_with=Owner"`
+	Mode         os.FileMode `yaml:"mode,omitempty"`
+	UID          uint32
+	GID          uint32
 }
