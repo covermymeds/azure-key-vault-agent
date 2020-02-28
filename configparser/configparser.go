@@ -96,9 +96,6 @@ func parseSinkConfig(sinkConfig config.SinkConfig) config.SinkConfig {
 		sinkConfig.GID = uint32(os.Getgid())
 	}
 
-	// Set Default Mode if none provided
-
-
 	return sinkConfig
 }
 
