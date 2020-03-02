@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/user"
+	"regexp"
 	"strconv"
 	"time"
 )
@@ -36,8 +37,18 @@ func ParseConfig(path string) []config.WorkerConfig {
 	return config.Workers
 }
 
+func ValidateFileMode(fl validator.FieldLevel) bool {
+	matched, err := regexp.MatchString(`^[0-7]{3,4}$`, fl.Field().String())
+	if err != nil {
+		panic(err)
+	}
+
+	return matched
+}
+
 func parseWorkerConfigs(workerConfigs []config.WorkerConfig) {
 	validate = validator.New()
+	validate.RegisterValidation("fileMode", ValidateFileMode)
 
 	for i, workerConfig := range workerConfigs {
 		err := validate.Struct(workerConfig)
@@ -95,6 +106,50 @@ func parseSinkConfig(sinkConfig config.SinkConfig) config.SinkConfig {
 		// Default to calling GID
 		sinkConfig.GID = uint32(os.Getgid())
 	}
+
+	// Parse the String Mode into Uint32
+	permstring := sinkConfig.Mode[len(sinkConfig.Mode)-3:]
+	permbits, err := strconv.ParseUint(permstring, 8, 32)
+	if err != nil {
+		panic(err)
+	}
+	log.Printf("Permbits: %#o", permbits)
+
+	finalMode := os.FileMode(permbits)
+
+	//calculate special bits if we have them i.e. 1700
+	if len(sinkConfig.Mode) == 4 {
+		//something between 0 and 7
+		specialbits, err := strconv.ParseUint(string(sinkConfig.Mode[0]), 8, 32)
+		if err != nil {
+			panic(err)
+		}
+		log.Printf("specialbits: %#o", specialbits)
+		sticky := uint32(1)
+		setgid := uint32(2)
+		setuid := uint32(4)
+
+		if uint32(specialbits) & sticky == sticky {
+			finalMode = finalMode | os.ModeSticky
+		}
+
+		if uint32(specialbits) & setgid == setgid {
+			finalMode = finalMode | os.ModeSetgid
+		}
+
+		if uint32(specialbits) & setuid == setuid {
+			finalMode = finalMode | os.ModeSetuid
+		}
+
+	}
+
+	log.Printf("Finalbits %v", finalMode)
+
+	sinkConfig.Perm = finalMode
+
+
+	log.Printf("Got Mode: %v, Perm: %v", sinkConfig.Mode, sinkConfig.Perm)
+	//log.Printf("Sticky uint: %#o", os.ModeSticky)
 
 	return sinkConfig
 }
