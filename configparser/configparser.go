@@ -42,7 +42,8 @@ func ValidateFileMode(fl validator.FieldLevel) bool {
 	if fl.Field().String() == "" {
 		return true
 	}
-		matched, err := regexp.MatchString(`^[0-7]{3,4}$`, fl.Field().String())
+
+	matched, err := regexp.MatchString(`^[0-7]{3,4}$`, fl.Field().String())
 	if err != nil {
 		panic(err)
 	}
