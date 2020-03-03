@@ -76,41 +76,16 @@ func parseSinkConfig(sinkConfig config.SinkConfig) config.SinkConfig {
 		panic("Template and TemplatePath cannot both be defined")
 	}
 
-	// Check the Owner and Group for existence
-	if sinkConfig.Owner != "" {
-		u, err := user.Lookup(sinkConfig.Owner)
-		if err != nil {
-			panic(err)
-		}
+	// Parse the Ownership
+	sinkConfig = parseSinkOwnership(sinkConfig)
 
-		uid, err := strconv.ParseUint(u.Uid, 10, 32)
-		if err != nil {
-			panic(err)
-		}
+	// Parse the Permissions
+	sinkConfig = parseSinkPermissions(sinkConfig)
 
-		sinkConfig.UID = uint32(uid)
-	} else {
-		// Default to calling UID
-		sinkConfig.UID = uint32(os.Getuid())
-	}
+	return sinkConfig
+}
 
-	if sinkConfig.Group != "" {
-		g, err := user.LookupGroup(sinkConfig.Group)
-		if err != nil {
-			panic(err)
-		}
-
-		gid, err := strconv.ParseUint(g.Gid, 10, 32)
-		if err != nil {
-			panic(err)
-		}
-
-		sinkConfig.GID = uint32(gid)
-	} else {
-		// Default to calling GID
-		sinkConfig.GID = uint32(os.Getgid())
-	}
-
+func parseSinkPermissions(sinkConfig config.SinkConfig) config.SinkConfig{
 	if sinkConfig.Mode != "" {
 		// Parse the last 3 digits for unix permissions
 		permbits, err := strconv.ParseUint(sinkConfig.Mode[len(sinkConfig.Mode)-3:], 8, 32)
@@ -152,6 +127,44 @@ func parseSinkConfig(sinkConfig config.SinkConfig) config.SinkConfig {
 	} else {
 		// Set default file mode of 644
 		sinkConfig.FileMode = os.FileMode(0644)
+	}
+
+	return sinkConfig
+}
+
+func parseSinkOwnership(sinkConfig config.SinkConfig) config.SinkConfig {
+	if sinkConfig.Owner != "" {
+		u, err := user.Lookup(sinkConfig.Owner)
+		if err != nil {
+			panic(err)
+		}
+
+		uid, err := strconv.ParseUint(u.Uid, 10, 32)
+		if err != nil {
+			panic(err)
+		}
+
+		sinkConfig.UID = uint32(uid)
+	} else {
+		// Default to calling UID
+		sinkConfig.UID = uint32(os.Getuid())
+	}
+
+	if sinkConfig.Group != "" {
+		g, err := user.LookupGroup(sinkConfig.Group)
+		if err != nil {
+			panic(err)
+		}
+
+		gid, err := strconv.ParseUint(g.Gid, 10, 32)
+		if err != nil {
+			panic(err)
+		}
+
+		sinkConfig.GID = uint32(gid)
+	} else {
+		// Default to calling GID
+		sinkConfig.GID = uint32(os.Getgid())
 	}
 
 	return sinkConfig
