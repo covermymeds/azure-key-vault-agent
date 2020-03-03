@@ -38,7 +38,11 @@ func ParseConfig(path string) []config.WorkerConfig {
 }
 
 func ValidateFileMode(fl validator.FieldLevel) bool {
-	matched, err := regexp.MatchString(`^[0-7]{3,4}$`, fl.Field().String())
+	// This is an optional field
+	if fl.Field().String() == "" {
+		return true
+	}
+		matched, err := regexp.MatchString(`^[0-7]{3,4}$`, fl.Field().String())
 	if err != nil {
 		panic(err)
 	}
@@ -107,49 +111,48 @@ func parseSinkConfig(sinkConfig config.SinkConfig) config.SinkConfig {
 		sinkConfig.GID = uint32(os.Getgid())
 	}
 
-	// Parse the String Mode into Uint32
-	permstring := sinkConfig.Mode[len(sinkConfig.Mode)-3:]
-	permbits, err := strconv.ParseUint(permstring, 8, 32)
-	if err != nil {
-		panic(err)
-	}
-	log.Printf("Permbits: %#o", permbits)
-
-	finalMode := os.FileMode(permbits)
-
-	//calculate special bits if we have them i.e. 1700
-	if len(sinkConfig.Mode) == 4 {
-		//something between 0 and 7
-		specialbits, err := strconv.ParseUint(string(sinkConfig.Mode[0]), 8, 32)
+	if sinkConfig.Mode != "" {
+		// Parse the last 3 digits for unix permissions
+		permbits, err := strconv.ParseUint(sinkConfig.Mode[len(sinkConfig.Mode)-3:], 8, 32)
 		if err != nil {
 			panic(err)
 		}
-		log.Printf("specialbits: %#o", specialbits)
-		sticky := uint32(1)
-		setgid := uint32(2)
-		setuid := uint32(4)
 
-		if uint32(specialbits) & sticky == sticky {
-			finalMode = finalMode | os.ModeSticky
+		// Set final mode to just perm bits for now
+		finalMode := os.FileMode(permbits)
+
+		// Calculate special bits if we have them i.e. 1700
+		if len(sinkConfig.Mode) == 4 {
+			// Something between 0 and 7
+			specialbits, err := strconv.ParseUint(string(sinkConfig.Mode[0]), 8, 32)
+			if err != nil {
+				panic(err)
+			}
+
+			// Figure out if sticky, setgid, or setuid and apply proper bitwise or
+			sticky := uint32(1)
+			setgid := uint32(2)
+			setuid := uint32(4)
+
+			if uint32(specialbits)&sticky == sticky {
+				finalMode = finalMode | os.ModeSticky
+			}
+
+			if uint32(specialbits)&setgid == setgid {
+				finalMode = finalMode | os.ModeSetgid
+			}
+
+			if uint32(specialbits)&setuid == setuid {
+				finalMode = finalMode | os.ModeSetuid
+			}
 		}
 
-		if uint32(specialbits) & setgid == setgid {
-			finalMode = finalMode | os.ModeSetgid
-		}
-
-		if uint32(specialbits) & setuid == setuid {
-			finalMode = finalMode | os.ModeSetuid
-		}
-
+		// Update sinkConfig to reflect calculated file perms
+		sinkConfig.FileMode = finalMode
+	} else {
+		// Set default file mode of 644
+		sinkConfig.FileMode = os.FileMode(0644)
 	}
-
-	log.Printf("Finalbits %v", finalMode)
-
-	sinkConfig.Perm = finalMode
-
-
-	log.Printf("Got Mode: %v, Perm: %v", sinkConfig.Mode, sinkConfig.Perm)
-	//log.Printf("Sticky uint: %#o", os.ModeSticky)
 
 	return sinkConfig
 }
