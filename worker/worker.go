@@ -229,7 +229,7 @@ func getFileAttributesChanged(sinkConfig config.SinkConfig) bool {
 	oldMode := f.Mode()
 
 	// Compare for changes
-	if (oldUid != uint32(sinkConfig.UID)) || (oldGid != uint32(sinkConfig.GID)) || (oldMode != sinkConfig.Mode){
+	if (oldUid != uint32(sinkConfig.UID)) || (oldGid != uint32(sinkConfig.GID)) || (oldMode != sinkConfig.FileMode){
 		return true
 	} else {
 		return false
@@ -242,20 +242,20 @@ func write(sinkConfig config.SinkConfig, content string) {
 		panic(err)
 	}
 
+	defer f.Close()
+
 	// Use the configured owner, group, and permissions if provided
 	err = f.Chown(int(sinkConfig.UID), int(sinkConfig.GID))
 	if err != nil {
 		panic(err)
 	}
 
-	if sinkConfig.Mode != 0 {
-		f.Chmod(sinkConfig.Mode)
+	err = f.Chmod(sinkConfig.FileMode)
+	if err != nil {
+		panic(err)
 	}
 
-	defer f.Close()
-
 	_, err = f.WriteString(content)
-
 	if err != nil {
 		panic(err)
 	}

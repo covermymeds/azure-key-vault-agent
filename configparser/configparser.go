@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/user"
+	"regexp"
 	"strconv"
 	"time"
 )
@@ -36,8 +37,23 @@ func ParseConfig(path string) []config.WorkerConfig {
 	return config.Workers
 }
 
+func ValidateFileMode(fl validator.FieldLevel) bool {
+	// This is an optional field
+	if fl.Field().String() == "" {
+		return true
+	}
+
+	matched, err := regexp.MatchString(`^[0-7]{3,4}$`, fl.Field().String())
+	if err != nil {
+		panic(err)
+	}
+
+	return matched
+}
+
 func parseWorkerConfigs(workerConfigs []config.WorkerConfig) {
 	validate = validator.New()
+	validate.RegisterValidation("fileMode", ValidateFileMode)
 
 	for i, workerConfig := range workerConfigs {
 		err := validate.Struct(workerConfig)
@@ -61,7 +77,63 @@ func parseSinkConfig(sinkConfig config.SinkConfig) config.SinkConfig {
 		panic("Template and TemplatePath cannot both be defined")
 	}
 
-	// Check the Owner and Group for existence
+	// Parse the Ownership
+	sinkConfig = parseSinkOwnership(sinkConfig)
+
+	// Parse the Permissions
+	sinkConfig = parseSinkPermissions(sinkConfig)
+
+	return sinkConfig
+}
+
+func parseSinkPermissions(sinkConfig config.SinkConfig) config.SinkConfig{
+	if sinkConfig.Mode != "" {
+		// Parse the last 3 digits for unix permissions
+		permbits, err := strconv.ParseUint(sinkConfig.Mode[len(sinkConfig.Mode)-3:], 8, 32)
+		if err != nil {
+			panic(err)
+		}
+
+		// Set final mode to just perm bits for now
+		finalMode := os.FileMode(permbits)
+
+		// Calculate special bits if we have them i.e. 1700
+		if len(sinkConfig.Mode) == 4 {
+			// Get the Special bits
+			specialBits, err := strconv.ParseUint(string(sinkConfig.Mode[0]), 8, 32)
+			if err != nil {
+				panic(err)
+			}
+
+			// Figure out if sticky, setgid, or setuid and apply proper bitwise or
+			sticky := uint32(1)
+			setgid := uint32(2)
+			setuid := uint32(4)
+
+			if uint32(specialBits)&sticky == sticky {
+				finalMode = finalMode | os.ModeSticky
+			}
+
+			if uint32(specialBits)&setgid == setgid {
+				finalMode = finalMode | os.ModeSetgid
+			}
+
+			if uint32(specialBits)&setuid == setuid {
+				finalMode = finalMode | os.ModeSetuid
+			}
+		}
+
+		// Update sinkConfig to reflect calculated file perms
+		sinkConfig.FileMode = finalMode
+	} else {
+		// Set default file mode of 644
+		sinkConfig.FileMode = os.FileMode(0644)
+	}
+
+	return sinkConfig
+}
+
+func parseSinkOwnership(sinkConfig config.SinkConfig) config.SinkConfig {
 	if sinkConfig.Owner != "" {
 		u, err := user.Lookup(sinkConfig.Owner)
 		if err != nil {
