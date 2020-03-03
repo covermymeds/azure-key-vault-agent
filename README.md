@@ -46,10 +46,9 @@ The `resources` section is a list of one or more resources to fetch. Each resour
 The `sinks` section is a list of one or more files to write to. Each sink has a `path` and either `template` (inline template) or `templatePath` (path to template on the filesystem). The template syntax is golang's [text/template](https://golang.org/pkg/text/template/#hdr-Text_and_spaces) library (with [sprig](https://github.com/Masterminds/sprig) helpers).
 
 `sinks` also support configuring file ownership and permission bits via the `owner`, `group`, and `mode` settings.
-- `owner` and `group` are the names of the respective entity and must both be present
-- `mode` accepts various bases (decimal, octal, hex) - for Octal values (i.e. 0644), You MUST prepend a leading `0` else it will be interpreted as decimal.
+- `owner` and `group` are the names of the respective entity and must both be present.  If omitted the executing user and group will be applied.
+- `mode` accepts file modes in either 3 or 4 digit notation `777`, `1644`, `0600` are all valid examples.  If omitted a default of `0644` will be used.
 
-If `owner`, `group`, or `mode` are omitted the executing user and umask will be applied.
 
 Each template has access to all of the resources specified in the `resources` section above, separated by kind and resource name. The fields available to you for any given resource can be found by looking at the corresponding source structs:
 
@@ -93,7 +92,7 @@ workers:
         template: '{{ privateKey "pem-test" }}'
         owner: myuser
         group: mygroup
-        mode: 0644
+        mode: 0600
       - path: ./pem-test.cert
         template: '{{ cert "pem-test" }}'
 ```
@@ -174,3 +173,7 @@ Workers work in a loop, whose frequency is controlled by the `frequency` field i
 # Config watcher
 
 A filesystem watch is placed on the specified config file, and if the file is changed, the config will be re-parsed and all of the workers will be killed and recreated based on the new config
+
+# Known Issues
+
+- Using a 4 digit `mode` on MacOS will only support `sticky` (i.e. `1644`). `setuid` and `setgid` do not work.

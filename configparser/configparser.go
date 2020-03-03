@@ -123,8 +123,8 @@ func parseSinkConfig(sinkConfig config.SinkConfig) config.SinkConfig {
 
 		// Calculate special bits if we have them i.e. 1700
 		if len(sinkConfig.Mode) == 4 {
-			// Something between 0 and 7
-			specialbits, err := strconv.ParseUint(string(sinkConfig.Mode[0]), 8, 32)
+			// Get the Special bits
+			specialBits, err := strconv.ParseUint(string(sinkConfig.Mode[0]), 8, 32)
 			if err != nil {
 				panic(err)
 			}
@@ -134,15 +134,15 @@ func parseSinkConfig(sinkConfig config.SinkConfig) config.SinkConfig {
 			setgid := uint32(2)
 			setuid := uint32(4)
 
-			if uint32(specialbits)&sticky == sticky {
+			if uint32(specialBits)&sticky == sticky {
 				finalMode = finalMode | os.ModeSticky
 			}
 
-			if uint32(specialbits)&setgid == setgid {
+			if uint32(specialBits)&setgid == setgid {
 				finalMode = finalMode | os.ModeSetgid
 			}
 
-			if uint32(specialbits)&setuid == setuid {
+			if uint32(specialBits)&setuid == setuid {
 				finalMode = finalMode | os.ModeSetuid
 			}
 		}

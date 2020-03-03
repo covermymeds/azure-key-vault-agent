@@ -242,22 +242,20 @@ func write(sinkConfig config.SinkConfig, content string) {
 		panic(err)
 	}
 
+	defer f.Close()
+
 	// Use the configured owner, group, and permissions if provided
 	err = f.Chown(int(sinkConfig.UID), int(sinkConfig.GID))
 	if err != nil {
 		panic(err)
 	}
 
-	log.Printf("FileMode: %v", sinkConfig.FileMode)
 	err = f.Chmod(sinkConfig.FileMode)
 	if err != nil {
 		panic(err)
 	}
 
-	defer f.Close()
-
 	_, err = f.WriteString(content)
-
 	if err != nil {
 		panic(err)
 	}

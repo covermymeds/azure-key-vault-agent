@@ -25,5 +25,6 @@ require (
 	github.com/sirupsen/logrus v1.4.2
 	github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94
 	golang.org/x/crypto v0.0.0-20200117160349-530e935923ad
+	golang.org/x/sys v0.0.0-20190422165155-953cdadca894
 	gopkg.in/yaml.v2 v2.2.7
 )
