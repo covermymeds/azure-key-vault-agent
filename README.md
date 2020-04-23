@@ -2,12 +2,6 @@
 
 `akva --config=akva.yaml`
 
-## Single execution
-
-To run once then exit, you can use:
-
-`akva --config=akva.yaml --once`
-
 # Authentication
 
 You can either specify the following as environment variables, or put them into a file called `.env`:
