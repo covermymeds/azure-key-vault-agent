@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/chrisjohnson/azure-key-vault-agent/authconfig"
 	"github.com/chrisjohnson/azure-key-vault-agent/configwatcher"
 	"github.com/luci/luci-go/common/flag/flagenum"
 	log "github.com/sirupsen/logrus"
@@ -64,17 +63,6 @@ func init() {
 		log.SetFormatter(&log.TextFormatter{
 			FullTimestamp: true,
 		})
-	}
-
-	var err error
-	err = authconfig.ParseEnvironment()
-	if err != nil {
-		log.Fatalf("AuthConfig: Failed to parse env: %v", err.Error())
-	}
-
-	err = authconfig.AddFlags(*fs)
-	if err != nil {
-		log.Fatalf("AuthConfig: Failed to add flags: %v", err.Error())
 	}
 
 	fs.Parse(os.Args[1:])
