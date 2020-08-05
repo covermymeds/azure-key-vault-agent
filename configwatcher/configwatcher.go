@@ -3,9 +3,9 @@ package configwatcher
 import (
 	"context"
 	"fmt"
-	"github.com/chrisjohnson/azure-key-vault-agent/client"
-	"github.com/chrisjohnson/azure-key-vault-agent/configparser"
-	"github.com/chrisjohnson/azure-key-vault-agent/worker"
+	"github.com/covermymeds/azure-key-vault-agent/client"
+	"github.com/covermymeds/azure-key-vault-agent/configparser"
+	"github.com/covermymeds/azure-key-vault-agent/worker"
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
 	"path/filepath"

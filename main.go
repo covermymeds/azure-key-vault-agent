@@ -3,7 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/chrisjohnson/azure-key-vault-agent/configwatcher"
+	"github.com/covermymeds/azure-key-vault-agent/configwatcher"
 	"github.com/luci/luci-go/common/flag/flagenum"
 	log "github.com/sirupsen/logrus"
 	"os"

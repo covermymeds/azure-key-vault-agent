@@ -12,7 +12,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/chrisjohnson/azure-key-vault-agent/config"
+	"github.com/covermymeds/azure-key-vault-agent/config"
 	"github.com/gobuffalo/envy"
 )
 

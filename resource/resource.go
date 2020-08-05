@@ -1,9 +1,9 @@
 package resource
 
 import (
-	"github.com/chrisjohnson/azure-key-vault-agent/certs"
-	"github.com/chrisjohnson/azure-key-vault-agent/keys"
-	"github.com/chrisjohnson/azure-key-vault-agent/secrets"
+	"github.com/covermymeds/azure-key-vault-agent/certs"
+	"github.com/covermymeds/azure-key-vault-agent/keys"
+	"github.com/covermymeds/azure-key-vault-agent/secrets"
 )
 
 type Resource interface {

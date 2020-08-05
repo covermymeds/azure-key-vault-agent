@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/Masterminds/sprig"
-	"github.com/chrisjohnson/azure-key-vault-agent/certutil"
-	"github.com/chrisjohnson/azure-key-vault-agent/resource"
+	"github.com/covermymeds/azure-key-vault-agent/certutil"
+	"github.com/covermymeds/azure-key-vault-agent/resource"
 	"io/ioutil"
 	"text/template"
 )

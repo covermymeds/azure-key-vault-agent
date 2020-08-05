@@ -3,8 +3,8 @@ package client
 import (
 	"fmt"
 
-	"github.com/chrisjohnson/azure-key-vault-agent/config"
-	"github.com/chrisjohnson/azure-key-vault-agent/iam"
+	"github.com/covermymeds/azure-key-vault-agent/config"
+	"github.com/covermymeds/azure-key-vault-agent/iam"
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/2016-10-01/keyvault"
 )

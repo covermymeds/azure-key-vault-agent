@@ -10,13 +10,13 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/chrisjohnson/azure-key-vault-agent/certs"
-	"github.com/chrisjohnson/azure-key-vault-agent/client"
-	"github.com/chrisjohnson/azure-key-vault-agent/config"
-	"github.com/chrisjohnson/azure-key-vault-agent/keys"
-	"github.com/chrisjohnson/azure-key-vault-agent/resource"
-	"github.com/chrisjohnson/azure-key-vault-agent/secrets"
-	"github.com/chrisjohnson/azure-key-vault-agent/templaterenderer"
+	"github.com/covermymeds/azure-key-vault-agent/certs"
+	"github.com/covermymeds/azure-key-vault-agent/client"
+	"github.com/covermymeds/azure-key-vault-agent/config"
+	"github.com/covermymeds/azure-key-vault-agent/keys"
+	"github.com/covermymeds/azure-key-vault-agent/resource"
+	"github.com/covermymeds/azure-key-vault-agent/secrets"
+	"github.com/covermymeds/azure-key-vault-agent/templaterenderer"
 
 	"github.com/jpillora/backoff"
 )
