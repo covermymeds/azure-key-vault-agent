@@ -6,7 +6,6 @@
 package iam
 
 import (
-	"fmt"
 	"net/url"
 	"strings"
 
@@ -14,108 +13,12 @@ import (
 
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
-	"github.com/Azure/go-autorest/autorest/azure/auth"
 )
-
-var (
-	armAuthorizer      autorest.Authorizer
-	batchAuthorizer    autorest.Authorizer
-	graphAuthorizer    autorest.Authorizer
-	keyvaultAuthorizer autorest.Authorizer
-)
-
-// OAuthGrantType specifies which grant type to use.
-type OAuthGrantType int
-
-const (
-	// OAuthGrantTypeServicePrincipal for client credentials flow
-	OAuthGrantTypeServicePrincipal OAuthGrantType = iota
-	// OAuthGrantTypeDeviceFlow for device flow
-	OAuthGrantTypeDeviceFlow
-)
-
-// GrantType returns what grant type has been configured.
-func grantType() OAuthGrantType {
-	if authconfig.UseDeviceFlow() {
-		return OAuthGrantTypeDeviceFlow
-	}
-	return OAuthGrantTypeServicePrincipal
-}
-
-// GetResourceManagementAuthorizer gets an OAuthTokenAuthorizer for Azure Resource Manager
-func GetResourceManagementAuthorizer() (autorest.Authorizer, error) {
-	if armAuthorizer != nil {
-		return armAuthorizer, nil
-	}
-
-	var a autorest.Authorizer
-	var err error
-
-	a, err = getAuthorizerForResource(
-		grantType(), authconfig.Environment().ResourceManagerEndpoint)
-
-	if err == nil {
-		// cache
-		armAuthorizer = a
-	} else {
-		// clear cache
-		armAuthorizer = nil
-	}
-	return armAuthorizer, err
-}
-
-// GetBatchAuthorizer gets an OAuthTokenAuthorizer for Azure Batch.
-func GetBatchAuthorizer() (autorest.Authorizer, error) {
-	if batchAuthorizer != nil {
-		return batchAuthorizer, nil
-	}
-
-	var a autorest.Authorizer
-	var err error
-
-	a, err = getAuthorizerForResource(
-		grantType(), authconfig.Environment().BatchManagementEndpoint)
-
-	if err == nil {
-		// cache
-		batchAuthorizer = a
-	} else {
-		// clear cache
-		batchAuthorizer = nil
-	}
-
-	return batchAuthorizer, err
-}
-
-// GetGraphAuthorizer gets an OAuthTokenAuthorizer for graphrbac API.
-func GetGraphAuthorizer() (autorest.Authorizer, error) {
-	if graphAuthorizer != nil {
-		return graphAuthorizer, nil
-	}
-
-	var a autorest.Authorizer
-	var err error
-
-	a, err = getAuthorizerForResource(grantType(), authconfig.Environment().GraphEndpoint)
-
-	if err == nil {
-		// cache
-		graphAuthorizer = a
-	} else {
-		graphAuthorizer = nil
-	}
-
-	return graphAuthorizer, err
-}
 
 // GetKeyvaultAuthorizer gets an OAuthTokenAuthorizer for use with Key Vault
 // keys and secrets. Note that Key Vault *Vaults* are managed by Azure Resource
 // Manager.
 func GetKeyvaultAuthorizer() (autorest.Authorizer, error) {
-	if keyvaultAuthorizer != nil {
-		return keyvaultAuthorizer, nil
-	}
-
 	// BUG: default value for KeyVaultEndpoint is wrong
 	vaultEndpoint := strings.TrimSuffix(authconfig.Environment().KeyVaultEndpoint, "/")
 	// BUG: alternateEndpoint replaces other endpoints in the configs below
@@ -125,86 +28,24 @@ func GetKeyvaultAuthorizer() (autorest.Authorizer, error) {
 	var a autorest.Authorizer
 	var err error
 
-	switch grantType() {
-	case OAuthGrantTypeServicePrincipal:
-		oauthconfig, err := adal.NewOAuthConfig(
-			authconfig.Environment().ActiveDirectoryEndpoint, authconfig.TenantID())
-		if err != nil {
-			return a, err
-		}
-		oauthconfig.AuthorizeEndpoint = *alternateEndpoint
-
-		token, err := adal.NewServicePrincipalToken(
-			*oauthconfig, authconfig.ClientID(), authconfig.ClientSecret(), vaultEndpoint)
-		if err != nil {
-			return a, err
-		}
-
-		a = autorest.NewBearerAuthorizer(token)
-
-	case OAuthGrantTypeDeviceFlow:
-		deviceConfig := auth.NewDeviceFlowConfig(authconfig.ClientID(), authconfig.TenantID())
-		deviceConfig.Resource = vaultEndpoint
-		deviceConfig.AADEndpoint = alternateEndpoint.String()
-		a, err = deviceConfig.Authorizer()
-	default:
-		return a, fmt.Errorf("invalid grant type specified")
+	oauthconfig, err := adal.NewOAuthConfig(
+		authconfig.Environment().ActiveDirectoryEndpoint, authconfig.TenantID())
+	if err != nil {
+		return a, err
 	}
+	oauthconfig.AuthorizeEndpoint = *alternateEndpoint
+
+	token, err := adal.NewServicePrincipalToken(
+		*oauthconfig, authconfig.ClientID(), authconfig.ClientSecret(), vaultEndpoint)
+	if err != nil {
+		return a, err
+	}
+
+	a = autorest.NewBearerAuthorizer(token)
 
 	if err == nil {
-		keyvaultAuthorizer = a
+		return a, nil
 	} else {
-		keyvaultAuthorizer = nil
+		return nil, err
 	}
-
-	return keyvaultAuthorizer, err
-}
-
-func getAuthorizerForResource(grantType OAuthGrantType, resource string) (autorest.Authorizer, error) {
-
-	var a autorest.Authorizer
-	var err error
-
-	switch grantType {
-
-	case OAuthGrantTypeServicePrincipal:
-		oauthConfig, err := adal.NewOAuthConfig(
-			authconfig.Environment().ActiveDirectoryEndpoint, authconfig.TenantID())
-		if err != nil {
-			return nil, err
-		}
-
-		token, err := adal.NewServicePrincipalToken(
-			*oauthConfig, authconfig.ClientID(), authconfig.ClientSecret(), resource)
-		if err != nil {
-			return nil, err
-		}
-		a = autorest.NewBearerAuthorizer(token)
-
-	case OAuthGrantTypeDeviceFlow:
-		deviceconfig := auth.NewDeviceFlowConfig(authconfig.ClientID(), authconfig.TenantID())
-		deviceconfig.Resource = resource
-		a, err = deviceconfig.Authorizer()
-		if err != nil {
-			return nil, err
-		}
-
-	default:
-		return a, fmt.Errorf("invalid grant type specified")
-	}
-
-	return a, err
-}
-
-// GetResourceManagementTokenHybrid retrieves auth token for hybrid environment
-func GetResourceManagementTokenHybrid(activeDirectoryEndpoint, tokenAudience string) (adal.OAuthTokenProvider, error) {
-	var tokenProvider adal.OAuthTokenProvider
-	oauthConfig, err := adal.NewOAuthConfig(activeDirectoryEndpoint, authconfig.TenantID())
-	tokenProvider, err = adal.NewServicePrincipalToken(
-		*oauthConfig,
-		authconfig.ClientID(),
-		authconfig.ClientSecret(),
-		tokenAudience)
-
-	return tokenProvider, err
 }
