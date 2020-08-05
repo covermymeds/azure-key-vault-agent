@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/chrisjohnson/azure-key-vault-agent/config"
+	"github.com/gobuffalo/envy"
 )
 
 var validate *validator.Validate
@@ -23,7 +24,7 @@ type Config struct {
 }
 
 func ParseConfig(path string) Config {
-	config := Config{}
+	config := Config{Credentials: defaultCredentials()}
 	data, err := ioutil.ReadFile(path)
 
 	if err != nil {
@@ -35,8 +36,10 @@ func ParseConfig(path string) Config {
 		panic(fmt.Sprintf("Error unmarshalling yaml: %v", err))
 	}
 
-	parseCredentialConfigs(config.Credentials)
-	parseWorkerConfigs(config.Workers)
+	validateCredentialConfigs(config.Credentials)
+
+	parseWorkerConfigs(config)
+
 	return config
 }
 
@@ -54,9 +57,20 @@ func ValidateFileMode(fl validator.FieldLevel) bool {
 	return matched
 }
 
-func parseCredentialConfigs(credentialConfigs []config.CredentialConfig) {
+func defaultCredentials() []config.CredentialConfig {
+	tenantID := envy.Get("AZURE_TENANT_ID", "")
+	clientID := envy.Get("AZURE_CLIENT_ID", "")
+	clientSecret := envy.Get("AZURE_CLIENT_SECRET", "")
+
+	return []config.CredentialConfig{config.CredentialConfig{
+		Name:         "default",
+		TenantID:     tenantID,
+		ClientID:     clientID,
+		ClientSecret: clientSecret}}
+}
+
+func validateCredentialConfigs(credentialConfigs []config.CredentialConfig) {
 	validate = validator.New()
-	validate.RegisterValidation("fileMode", ValidateFileMode)
 
 	names := make(map[string]bool)
 	for _, credentialConfig := range credentialConfigs {
@@ -73,22 +87,42 @@ func parseCredentialConfigs(credentialConfigs []config.CredentialConfig) {
 	}
 }
 
-func parseWorkerConfigs(workerConfigs []config.WorkerConfig) {
+func parseWorkerConfigs(config Config) {
 	validate = validator.New()
 	validate.RegisterValidation("fileMode", ValidateFileMode)
 
-	for i, workerConfig := range workerConfigs {
+	for i, workerConfig := range config.Workers {
 		err := validate.Struct(workerConfig)
 		if err != nil {
 			panic(fmt.Sprintf("Error parsing worker config: %v", err))
 		}
 
 		// Convert human readable time and save into TimeFrequency
-		workerConfigs[i].TimeFrequency = frequencyConverter(workerConfig.Frequency)
+		config.Workers[i].TimeFrequency = frequencyConverter(workerConfig.Frequency)
+
+		// Check each resourceConfig in the workerConfig
+		for j, _ := range workerConfig.Resources {
+			// If no Credential is specified, default to "default"
+			if config.Workers[i].Resources[j].Credential == "" {
+				config.Workers[i].Resources[j].Credential = "default"
+			}
+
+			// Confirm that a Credential by this name exists
+			found := false
+			for _, credential := range config.Credentials {
+				if credential.Name == config.Workers[i].Resources[j].Credential {
+					found = true
+					break
+				}
+			}
+			if !found {
+				panic(fmt.Sprintf("Error parsing worker config: credential %v not found", config.Workers[i].Resources[j].Credential))
+			}
+		}
 
 		// Check each sinkConfig in the workerConfig
 		for j, sinkConfig := range workerConfig.Sinks {
-			workerConfigs[i].Sinks[j] = parseSinkConfig(sinkConfig)
+			config.Workers[i].Sinks[j] = parseSinkConfig(sinkConfig)
 		}
 	}
 }

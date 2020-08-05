@@ -78,26 +78,28 @@ func Worker(ctx context.Context, clients client.Clients, workerConfig config.Wor
 }
 
 func Process(ctx context.Context, clients client.Clients, workerConfig config.WorkerConfig) error {
+
 	resources := resource.ResourceMap{make(map[string]certs.Cert), make(map[string]secrets.Secret), make(map[string]keys.Key)}
 
 	for _, resourceConfig := range workerConfig.Resources {
+		client := clients[resourceConfig.Credential]
 		switch resourceConfig.Kind {
 		case config.CertKind:
-			result, err := certs.GetCert(clients[resourceConfig.Credential], resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
+			result, err := certs.GetCert(client, resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
 			if err != nil {
 				return err
 			}
 			resources.Certs[resourceConfig.Name] = result
 
 		case config.SecretKind:
-			result, err := secrets.GetSecret(clients[resourceConfig.Credential], resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
+			result, err := secrets.GetSecret(client, resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
 			if err != nil {
 				return err
 			}
 			resources.Secrets[resourceConfig.Name] = result
 
 		case config.KeyKind:
-			result, err := keys.GetKey(clients[resourceConfig.Credential], resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
+			result, err := keys.GetKey(client, resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
 			if err != nil {
 				return err
 			}
