@@ -152,28 +152,6 @@ func Process(ctx context.Context, workerConfig config.WorkerConfig) error {
 	return nil
 }
 
-func fetch(ctx context.Context, resourceConfig config.ResourceConfig) (result resource.Resource, err error) {
-	switch resourceConfig.Kind {
-	case config.CertKind:
-		result, err = certs.GetCert(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
-
-	case config.SecretKind:
-		result, err = secrets.GetSecret(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
-
-	case config.KeyKind:
-		result, err = keys.GetKey(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
-
-	default:
-		panic(fmt.Sprintf("Invalid sink kind: %v", resourceConfig.Kind))
-	}
-
-	if err != nil {
-		return nil, err
-	} else {
-		return result, nil
-	}
-}
-
 func getNewContent(sinkConfig config.SinkConfig, resources resource.ResourceMap) string {
 	// If we have templates get the new value from rendering them
 	if sinkConfig.Template != "" || sinkConfig.TemplatePath != "" {
@@ -229,7 +207,7 @@ func getFileAttributesChanged(sinkConfig config.SinkConfig) bool {
 	oldMode := f.Mode()
 
 	// Compare for changes
-	if (oldUid != uint32(sinkConfig.UID)) || (oldGid != uint32(sinkConfig.GID)) || (oldMode != sinkConfig.FileMode){
+	if (oldUid != uint32(sinkConfig.UID)) || (oldGid != uint32(sinkConfig.GID)) || (oldMode != sinkConfig.FileMode) {
 		return true
 	} else {
 		return false
