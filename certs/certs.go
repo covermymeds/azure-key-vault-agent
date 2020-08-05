@@ -9,8 +9,6 @@ import (
 	"regexp"
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/2016-10-01/keyvault"
-
-	"github.com/chrisjohnson/azure-key-vault-agent/iam"
 )
 
 type Cert keyvault.CertificateBundle
@@ -19,18 +17,8 @@ func (c Cert) String() string {
 	return base64.StdEncoding.EncodeToString(*c.Cer)
 }
 
-func newClient() keyvault.BaseClient {
-	client := keyvault.New()
-	a, err := iam.GetKeyvaultAuthorizer()
-	if err != nil {
-		panic(fmt.Sprintf("Error authorizing: %v", err.Error()))
-	}
-	client.Authorizer = a
-	return client
-}
-
-func GetCert(vaultBaseURL string, certName string, certVersion string) (Cert, error) {
-	cert, err := newClient().GetCertificate(context.Background(), vaultBaseURL, certName, certVersion)
+func GetCert(client keyvault.BaseClient, vaultBaseURL string, certName string, certVersion string) (Cert, error) {
+	cert, err := client.GetCertificate(context.Background(), vaultBaseURL, certName, certVersion)
 	if err != nil {
 		log.Printf("Error getting cert: %v", err.Error())
 		return Cert{}, err
@@ -39,7 +27,7 @@ func GetCert(vaultBaseURL string, certName string, certVersion string) (Cert, er
 	return Cert(cert), nil
 }
 
-func GetCertByURL(certURL string) (Cert, error) {
+func GetCertByURL(client keyvault.BaseClient, certURL string) (Cert, error) {
 	u, err := url.Parse(certURL)
 	if err != nil {
 		log.Printf("Failed to parse URL for cert: %v", err.Error())
@@ -51,7 +39,7 @@ func GetCertByURL(certURL string) (Cert, error) {
 	res := regex.FindAllStringSubmatch(u.Path, -1)
 	certName := res[0][1]
 
-	result, err := GetCert(vaultBaseURL, certName, "")
+	result, err := GetCert(client, vaultBaseURL, certName, "")
 	if err != nil {
 		log.Printf("Failed to get cert from parsed values %v and %v: %v", vaultBaseURL, certName, err.Error())
 		return Cert{}, err
@@ -60,9 +48,9 @@ func GetCertByURL(certURL string) (Cert, error) {
 	return result, nil
 }
 
-func GetCerts(vaultBaseURL string) (results []Cert, err error) {
+func GetCerts(client keyvault.BaseClient, vaultBaseURL string) (results []Cert, err error) {
 	max := int32(25)
-	pages, err := newClient().GetCertificates(context.Background(), vaultBaseURL, &max)
+	pages, err := client.GetCertificates(context.Background(), vaultBaseURL, &max)
 	if err != nil {
 		log.Printf("Error getting cert: %v", err.Error())
 		return nil, err
@@ -71,7 +59,7 @@ func GetCerts(vaultBaseURL string) (results []Cert, err error) {
 	for {
 		for _, value := range pages.Values() {
 			certURL := *value.ID
-			cert, err := GetCertByURL(certURL)
+			cert, err := GetCertByURL(client, certURL)
 			if err != nil {
 				log.Printf("Error loading cert contents: %v", err.Error())
 				return nil, err

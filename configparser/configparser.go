@@ -2,7 +2,6 @@ package configparser
 
 import (
 	"fmt"
-	"github.com/chrisjohnson/azure-key-vault-agent/config"
 	"github.com/go-playground/validator/v10"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -12,15 +11,18 @@ import (
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/chrisjohnson/azure-key-vault-agent/config"
 )
 
 var validate *validator.Validate
 
 type Config struct {
-	Workers []config.WorkerConfig
+	Credentials []config.CredentialConfig
+	Workers     []config.WorkerConfig
 }
 
-func ParseConfig(path string) []config.WorkerConfig {
+func ParseConfig(path string) Config {
 	config := Config{}
 	data, err := ioutil.ReadFile(path)
 
@@ -33,8 +35,9 @@ func ParseConfig(path string) []config.WorkerConfig {
 		panic(fmt.Sprintf("Error unmarshalling yaml: %v", err))
 	}
 
+	parseCredentialConfigs(config.Credentials)
 	parseWorkerConfigs(config.Workers)
-	return config.Workers
+	return config
 }
 
 func ValidateFileMode(fl validator.FieldLevel) bool {
@@ -49,6 +52,25 @@ func ValidateFileMode(fl validator.FieldLevel) bool {
 	}
 
 	return matched
+}
+
+func parseCredentialConfigs(credentialConfigs []config.CredentialConfig) {
+	validate = validator.New()
+	validate.RegisterValidation("fileMode", ValidateFileMode)
+
+	names := make(map[string]bool)
+	for _, credentialConfig := range credentialConfigs {
+		err := validate.Struct(credentialConfig)
+		if err != nil {
+			panic(fmt.Sprintf("Error parsing credential config: %v", err))
+		}
+
+		if names[credentialConfig.Name] {
+			panic(fmt.Sprintf("Error parsing credential config: name %v used more than once", credentialConfig.Name))
+		}
+
+		names[credentialConfig.Name] = true
+	}
 }
 
 func parseWorkerConfigs(workerConfigs []config.WorkerConfig) {
@@ -86,7 +108,7 @@ func parseSinkConfig(sinkConfig config.SinkConfig) config.SinkConfig {
 	return sinkConfig
 }
 
-func parseSinkPermissions(sinkConfig config.SinkConfig) config.SinkConfig{
+func parseSinkPermissions(sinkConfig config.SinkConfig) config.SinkConfig {
 	if sinkConfig.Mode != "" {
 		// Parse the last 3 digits for unix permissions
 		permbits, err := strconv.ParseUint(sinkConfig.Mode[len(sinkConfig.Mode)-3:], 8, 32)

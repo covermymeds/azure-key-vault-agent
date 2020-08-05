@@ -7,6 +7,7 @@ import (
 	"github.com/luci/luci-go/common/flag/flagenum"
 	log "github.com/sirupsen/logrus"
 	"os"
+	"runtime/debug"
 )
 
 type outputType uint
@@ -31,12 +32,14 @@ func (val outputType) MarshalJSON() ([]byte, error) {
 var configFile string
 var output outputType
 var help bool
+var debugMode bool
 
 func init() {
 	fs := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
 	fs.SetOutput(os.Stdout)
 
 	fs.BoolVar(&help, "help", false, "Show this help text")
+	fs.BoolVar(&debugMode, "debug", false, "Enable debugging")
 	fs.StringVar(&configFile, "config", "", "Read config from this `file`")
 	fs.StringVar(&configFile, "c", "", "Read config from this `file` (shorthand)")
 	fs.Var(&output, "output", fmt.Sprintf("Output type (default json). Options are: %v (default json)", outputTypeEnum.Choices()))
@@ -71,7 +74,10 @@ func init() {
 func main() {
 	defer func() {
 		if r := recover(); r != nil {
-			log.Fatalf("Caught Panic In Main: %v", r)
+			if debugMode {
+				debug.PrintStack()
+			}
+			log.Fatalf("Caught panic in main: %v", r)
 		}
 	}()
 
