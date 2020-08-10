@@ -3,8 +3,9 @@ package configwatcher
 import (
 	"context"
 	"fmt"
-	"github.com/chrisjohnson/azure-key-vault-agent/configparser"
-	"github.com/chrisjohnson/azure-key-vault-agent/worker"
+	"github.com/covermymeds/azure-key-vault-agent/client"
+	"github.com/covermymeds/azure-key-vault-agent/configparser"
+	"github.com/covermymeds/azure-key-vault-agent/worker"
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
 	"path/filepath"
@@ -39,10 +40,18 @@ func parseAndStartWorkers(path string) context.CancelFunc {
 	// Create background context for workers
 	ctx, cancel := context.WithCancel(context.Background())
 
-	// Parse config file and start workers
-	workerConfigs := configparser.ParseConfig(path)
-	for _, workerConfig := range workerConfigs {
-		go worker.Worker(ctx, workerConfig)
+	// Parse config file
+	config := configparser.ParseConfig(path)
+
+	// Initialize clients
+	clients := make(client.Clients)
+	for _, credentialConfig := range config.Credentials {
+		clients[credentialConfig.Name] = client.NewClient(credentialConfig)
+	}
+
+	// Start workers
+	for _, workerConfig := range config.Workers {
+		go worker.Worker(ctx, clients, workerConfig)
 	}
 
 	return cancel

@@ -9,9 +9,6 @@ import (
 	"regexp"
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/2016-10-01/keyvault"
-
-	"github.com/chrisjohnson/azure-key-vault-agent/authconfig"
-	"github.com/chrisjohnson/azure-key-vault-agent/iam"
 )
 
 type Key keyvault.KeyBundle
@@ -36,19 +33,8 @@ func (kb Key) MarshalJSON() ([]byte, error) {
 	return json.Marshal(objectMap)
 }
 
-func newClient() keyvault.BaseClient {
-	client := keyvault.New()
-	a, err := iam.GetKeyvaultAuthorizer()
-	if err != nil {
-		panic(fmt.Sprintf("Error authorizing: %v", err.Error()))
-	}
-	client.Authorizer = a
-	client.AddToUserAgent(authconfig.UserAgent())
-	return client
-}
-
-func GetKey(vaultBaseURL string, keyName string, keyVersion string) (Key, error) {
-	key, err := newClient().GetKey(context.Background(), vaultBaseURL, keyName, keyVersion)
+func GetKey(client keyvault.BaseClient, vaultBaseURL string, keyName string, keyVersion string) (Key, error) {
+	key, err := client.GetKey(context.Background(), vaultBaseURL, keyName, keyVersion)
 	if err != nil {
 		log.Printf("Error getting key: %v", err.Error())
 		return Key{}, err
@@ -59,7 +45,7 @@ func GetKey(vaultBaseURL string, keyName string, keyVersion string) (Key, error)
 	return result, err
 }
 
-func GetKeyByURL(keyURL string) (Key, error) {
+func GetKeyByURL(client keyvault.BaseClient, keyURL string) (Key, error) {
 	u, err := url.Parse(keyURL)
 	if err != nil {
 		log.Printf("Failed to parse URL for key: %v", err.Error())
@@ -71,7 +57,7 @@ func GetKeyByURL(keyURL string) (Key, error) {
 	res := regex.FindAllStringSubmatch(u.Path, -1)
 	keyName := res[0][1]
 
-	result, err := GetKey(vaultBaseURL, keyName, "")
+	result, err := GetKey(client, vaultBaseURL, keyName, "")
 	if err != nil {
 		log.Printf("Failed to get key from parsed values %v and %v: %v", vaultBaseURL, keyName, err.Error())
 		return Key{}, err
@@ -80,9 +66,9 @@ func GetKeyByURL(keyURL string) (Key, error) {
 	return result, nil
 }
 
-func GetKeys(vaultBaseURL string) (results []Key, err error) {
+func GetKeys(client keyvault.BaseClient, vaultBaseURL string) (results []Key, err error) {
 	max := int32(25)
-	pages, err := newClient().GetKeys(context.Background(), vaultBaseURL, &max)
+	pages, err := client.GetKeys(context.Background(), vaultBaseURL, &max)
 	if err != nil {
 		log.Printf("Error getting key: %v", err.Error())
 		return nil, err
@@ -91,7 +77,7 @@ func GetKeys(vaultBaseURL string) (results []Key, err error) {
 	for {
 		for _, value := range pages.Values() {
 			keyURL := *value.Kid
-			key, err := GetKeyByURL(keyURL)
+			key, err := GetKeyByURL(client, keyURL)
 			if err != nil {
 				log.Printf("Error loading key contents: %v", err.Error())
 				return nil, err

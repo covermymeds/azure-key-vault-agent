@@ -4,36 +4,62 @@
 
 # Authentication
 
-You can either specify the following as environment variables, or put them into a file called `.env`:
+You can specify named credentials in the config file under the top-level key `credentials`.
+
+Additionally, you can specify the following environment variables (or specify these key=value pairs in a file called `.env`):
 
 ```bash
 AZURE_TENANT_ID=<tenant id>
-AZURE_SUBSCRIPTION_ID=<subscription id>
 AZURE_CLIENT_ID=<SPN name including http>
 AZURE_CLIENT_SECRET=<SPN password>
 ```
 
+They will be loaded as the credential name `default`.
+
 # Config
 
-Create a yaml file which holds configuration for one or more workers. Each worker can pull one or more resources and use those resources to write to one or more file sinks.
+Create a yaml file which holds configuration for one or more credentials and one or more workers.
+
+Each worker can pull one or more resources and use those resources to write to one or more file sinks.
 
 A simple example is given below:
 
 ```yaml
+credentials:
+  -
+    name: default
+    tenantID: test-id
+    clientID: https://test-client-id
+    clientSecret: test-secret
+
 workers:
   -
     resources:
       - kind: secret
         name: password
         vaultBaseURL: https://test-kv.vault.azure.net/
+        # No credential specified, so "default" will be used
     sinks:
       - path: ./password
         template: "{{ .Secrets.password.Value }}"
 ```
 
+## Credentials
+The `credentials` section is a list of one or more named credentials used for fetching resources. Each
+credential has a `tenantID`, `clientID`, `clientSecret`.
+
+The ENV vars (or .env file) will be injected
+as a credential with the name `default` if you don't override `default` within your config file.
+
 ## Resources
 
-The `resources` section is a list of one or more resources to fetch. Each resource has a `kind`, `name`, and `vaultBaseURL` field. Valid kinds are: `cert`, `secret`, `key`.
+The `resources` section is a list of one or more resources to fetch. Each resource has a `kind`, `name`,
+`vaultBaseURL`, and optional `credential` field.
+
+Valid kinds are: `cert`, `secret`, `key`.
+
+If you don't specify `credential`, a credential with the name `default` will be used (you can either
+specify the `default` credential in the `credentials` array, or as ENV vars / .env file)
 
 ## Sinks
 
@@ -129,13 +155,16 @@ workers:
     frequency: 60s
     postChange: docker restart webapp
     sinks:
-      - path: ./config.json
+      - path: ./config.yml
         template: "databaseUrl: psql://{{ .Secrets.dbUser.Value }}:{{ .Secrets.dbPass.Value }}@{{ .Secrets.dbHost.Value }}/{{ .Secrets.dbName.Value }}"
 ```
 
 ### Resources with special characters in their name
 
-Go's text/template syntax cannot handle reading fields with special characters (including hyphens) in the name directly. If you have a resource with a hyphen (or other funky character) you will have to use the built-in [index](https://golang.org/pkg/text/template/#hdr-Functions) function for fetching the appropriate value:
+Go's text/template syntax cannot handle reading fields with special characters (including hyphens)
+in the name directly. If you have a resource with a hyphen (or other funky character) you will have
+to use the built-in [index](https://golang.org/pkg/text/template/#hdr-Functions) function for fetching
+the appropriate value:
 
 ```yaml
 workers:
@@ -149,6 +178,45 @@ workers:
     sinks:
       - path: ./my-test
         template: '{{ index .Secrets "pem-test.Value" }}'
+```
+
+### Different credentials for different resources
+
+Using two sets of credentials, one named `default` and one named `shared`, fetch multiple resources.
+Don't specify any credential for the resources using `default`.
+
+```yaml
+credentials:
+  -
+    name: default
+    tenantID: my-tenant-id
+    clientID: http://cjohnson-test-spn
+    clientSecret: cjohnson-test-secret
+  -
+    name: shared
+    tenantID: my-tenant-id
+    clientID: http://shared-test-spn
+    clientSecret: shared-test-secret
+
+workers:
+  -
+    resources:
+      - kind: secret
+        name: thing1
+        vaultBaseURL: https://test-kv.vault.azure.net/
+        # No credential specified, so "default" will be used
+      - kind: secret
+        name: thing2
+        vaultBaseURL: https://test-kv.vault.azure.net/
+        # No credential specified, so "default" will be used
+      - kind: secret
+        name: thing3
+        vaultBaseURL: https://test-kv.vault.azure.net/
+        credential: shared # Refers to credentials.name == "shared" above
+    frequency: 60s
+    sinks:
+      - path: ./secret.txt
+        template: "{{ .Secrets.thing1.Value }}{{ .Secrets.thing2.Value }}{{ .Secrets.thing3.Value }}"
 ```
 
 # Workers

@@ -10,24 +10,26 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/chrisjohnson/azure-key-vault-agent/certs"
-	"github.com/chrisjohnson/azure-key-vault-agent/config"
-	"github.com/chrisjohnson/azure-key-vault-agent/keys"
-	"github.com/chrisjohnson/azure-key-vault-agent/resource"
-	"github.com/chrisjohnson/azure-key-vault-agent/secrets"
-	"github.com/chrisjohnson/azure-key-vault-agent/templaterenderer"
+	"github.com/covermymeds/azure-key-vault-agent/certs"
+	"github.com/covermymeds/azure-key-vault-agent/client"
+	"github.com/covermymeds/azure-key-vault-agent/config"
+	"github.com/covermymeds/azure-key-vault-agent/keys"
+	"github.com/covermymeds/azure-key-vault-agent/resource"
+	"github.com/covermymeds/azure-key-vault-agent/secrets"
+	"github.com/covermymeds/azure-key-vault-agent/templaterenderer"
 
 	"github.com/jpillora/backoff"
 )
 
 const RetryBreakPoint = 60
 
-func Worker(ctx context.Context, workerConfig config.WorkerConfig) {
+func Worker(ctx context.Context, clients client.Clients, workerConfig config.WorkerConfig) {
 	defer func() {
 		if r := recover(); r != nil {
 			log.Fatalf("Caught Panic In Worker: %v", r)
 		}
 	}()
+
 	b := &backoff.Backoff{
 		Min:    time.Duration(workerConfig.TimeFrequency),
 		Max:    time.Duration(workerConfig.TimeFrequency) * 10,
@@ -40,7 +42,7 @@ func Worker(ctx context.Context, workerConfig config.WorkerConfig) {
 
 	log.Printf("Starting worker with frequency %v", d)
 
-	err := Process(ctx, workerConfig)
+	err := Process(ctx, clients, workerConfig)
 	if err != nil {
 		log.Printf("Failed to get resource(s): %v", err)
 	}
@@ -52,7 +54,7 @@ func Worker(ctx context.Context, workerConfig config.WorkerConfig) {
 			log.Println("Shutting down worker")
 			return
 		case <-ticker.C:
-			err := Process(ctx, workerConfig)
+			err := Process(ctx, clients, workerConfig)
 			if err != nil {
 				if workerConfig.TimeFrequency > RetryBreakPoint {
 					// For long frequencies, we should set up an explicit retry (with backoff)
@@ -75,27 +77,29 @@ func Worker(ctx context.Context, workerConfig config.WorkerConfig) {
 	}
 }
 
-func Process(ctx context.Context, workerConfig config.WorkerConfig) error {
+func Process(ctx context.Context, clients client.Clients, workerConfig config.WorkerConfig) error {
+
 	resources := resource.ResourceMap{make(map[string]certs.Cert), make(map[string]secrets.Secret), make(map[string]keys.Key)}
 
 	for _, resourceConfig := range workerConfig.Resources {
+		client := clients[resourceConfig.Credential]
 		switch resourceConfig.Kind {
 		case config.CertKind:
-			result, err := certs.GetCert(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
+			result, err := certs.GetCert(client, resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
 			if err != nil {
 				return err
 			}
 			resources.Certs[resourceConfig.Name] = result
 
 		case config.SecretKind:
-			result, err := secrets.GetSecret(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
+			result, err := secrets.GetSecret(client, resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
 			if err != nil {
 				return err
 			}
 			resources.Secrets[resourceConfig.Name] = result
 
 		case config.KeyKind:
-			result, err := keys.GetKey(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
+			result, err := keys.GetKey(client, resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
 			if err != nil {
 				return err
 			}
@@ -150,28 +154,6 @@ func Process(ctx context.Context, workerConfig config.WorkerConfig) error {
 	}
 
 	return nil
-}
-
-func fetch(ctx context.Context, resourceConfig config.ResourceConfig) (result resource.Resource, err error) {
-	switch resourceConfig.Kind {
-	case config.CertKind:
-		result, err = certs.GetCert(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
-
-	case config.SecretKind:
-		result, err = secrets.GetSecret(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
-
-	case config.KeyKind:
-		result, err = keys.GetKey(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
-
-	default:
-		panic(fmt.Sprintf("Invalid sink kind: %v", resourceConfig.Kind))
-	}
-
-	if err != nil {
-		return nil, err
-	} else {
-		return result, nil
-	}
 }
 
 func getNewContent(sinkConfig config.SinkConfig, resources resource.ResourceMap) string {
@@ -229,7 +211,7 @@ func getFileAttributesChanged(sinkConfig config.SinkConfig) bool {
 	oldMode := f.Mode()
 
 	// Compare for changes
-	if (oldUid != uint32(sinkConfig.UID)) || (oldGid != uint32(sinkConfig.GID)) || (oldMode != sinkConfig.FileMode){
+	if (oldUid != uint32(sinkConfig.UID)) || (oldGid != uint32(sinkConfig.GID)) || (oldMode != sinkConfig.FileMode) {
 		return true
 	} else {
 		return false
