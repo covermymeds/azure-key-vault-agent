@@ -36,6 +36,8 @@ func ParseConfig(path string) Config {
 		panic(fmt.Sprintf("Error unmarshalling yaml: %v", err))
 	}
 
+	config.Credentials = mergeCredentials(defaultCredentials(), config.Credentials)
+
 	validateCredentialConfigs(config.Credentials)
 
 	parseWorkerConfigs(config)
@@ -67,6 +69,26 @@ func defaultCredentials() []config.CredentialConfig {
 		TenantID:     tenantID,
 		ClientID:     clientID,
 		ClientSecret: clientSecret}}
+}
+
+func mergeCredentials(a []config.CredentialConfig, b []config.CredentialConfig) []config.CredentialConfig {
+	merged := a
+
+	var found bool
+	for i, addition := range b {
+		found = false
+		for j, base := range merged {
+			if base.Name == addition.Name {
+				found = true
+				merged[j] = b[i]
+			}
+		}
+		if !found {
+			merged = append(merged, addition)
+		}
+	}
+
+	return merged
 }
 
 func validateCredentialConfigs(credentialConfigs []config.CredentialConfig) {
