@@ -24,7 +24,7 @@ type Config struct {
 }
 
 func ParseConfig(path string) Config {
-	config := Config{Credentials: defaultCredentials()}
+	config := Config{}
 	data, err := ioutil.ReadFile(path)
 
 	if err != nil {
@@ -71,24 +71,23 @@ func defaultCredentials() []config.CredentialConfig {
 		ClientSecret: clientSecret}}
 }
 
+// Since a is not a pointer, a is a *copy* of the object being passed
 func mergeCredentials(a []config.CredentialConfig, b []config.CredentialConfig) []config.CredentialConfig {
-	merged := a
-
 	var found bool
 	for i, addition := range b {
 		found = false
-		for j, base := range merged {
+		for j, base := range a {
 			if base.Name == addition.Name {
 				found = true
-				merged[j] = b[i]
+				a[j] = b[i]
 			}
 		}
 		if !found {
-			merged = append(merged, addition)
+			a = append(a, addition)
 		}
 	}
 
-	return merged
+	return a
 }
 
 func validateCredentialConfigs(credentialConfigs []config.CredentialConfig) {
