@@ -64,6 +64,12 @@ func defaultCredentials() []config.CredentialConfig {
 	clientID := envy.Get("AZURE_CLIENT_ID", "")
 	clientSecret := envy.Get("AZURE_CLIENT_SECRET", "")
 
+	// If none of the values were passed, return an empty slice
+	if tenantID == "" && clientID == "" && clientSecret == "" {
+		return make([]config.CredentialConfig, 0)
+	}
+
+	// Otherwise return a slice of n=1 credential
 	return []config.CredentialConfig{config.CredentialConfig{
 		Name:         "default",
 		TenantID:     tenantID,
