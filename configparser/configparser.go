@@ -24,7 +24,7 @@ type Config struct {
 }
 
 func ParseConfig(path string) Config {
-	config := Config{Credentials: defaultCredentials()}
+	config := Config{}
 	data, err := ioutil.ReadFile(path)
 
 	if err != nil {
@@ -35,6 +35,8 @@ func ParseConfig(path string) Config {
 	if err != nil {
 		panic(fmt.Sprintf("Error unmarshalling yaml: %v", err))
 	}
+
+	config.Credentials = mergeCredentials(defaultCredentials(), config.Credentials)
 
 	validateCredentialConfigs(config.Credentials)
 
@@ -62,11 +64,36 @@ func defaultCredentials() []config.CredentialConfig {
 	clientID := envy.Get("AZURE_CLIENT_ID", "")
 	clientSecret := envy.Get("AZURE_CLIENT_SECRET", "")
 
+	// If none of the values were passed, return an empty slice
+	if tenantID == "" && clientID == "" && clientSecret == "" {
+		return make([]config.CredentialConfig, 0)
+	}
+
+	// Otherwise return a slice of n=1 credential
 	return []config.CredentialConfig{config.CredentialConfig{
 		Name:         "default",
 		TenantID:     tenantID,
 		ClientID:     clientID,
 		ClientSecret: clientSecret}}
+}
+
+// Since a is not a pointer, a is a *copy* of the object being passed
+func mergeCredentials(a []config.CredentialConfig, b []config.CredentialConfig) []config.CredentialConfig {
+	var found bool
+	for i, addition := range b {
+		found = false
+		for j, base := range a {
+			if base.Name == addition.Name {
+				found = true
+				a[j] = b[i]
+			}
+		}
+		if !found {
+			a = append(a, addition)
+		}
+	}
+
+	return a
 }
 
 func validateCredentialConfigs(credentialConfigs []config.CredentialConfig) {
