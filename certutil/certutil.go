@@ -98,14 +98,9 @@ func PemCertFromPem(data string) string {
 }
 
 func PemCertFromBytes(derBytes []byte) string {
-	leaf, err := x509.ParseCertificate(derBytes)
-	if err != nil {
-		panic(err)
-	}
-
 	// Encode just the leaf cert as pem
 	var certPem bytes.Buffer
-	if err := pem.Encode(&certPem, &pem.Block{Type: "CERTIFICATE", Bytes: leaf.Raw}); err != nil {
+	if err := pem.Encode(&certPem, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
 		panic(fmt.Sprintf("Failed to write data: %s", err))
 	}
 

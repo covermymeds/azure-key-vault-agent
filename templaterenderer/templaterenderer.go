@@ -45,8 +45,8 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 		"cert": func(resource resource.Resource) string {
 			switch t := resource.(type) {
 			case certs.Cert:
-				log.Print("Got a Cert")
-				return certFromCert(resource.(certs.Cert))
+				cert := resource.(certs.Cert)
+				return certutil.PemCertFromBytes(*cert.Cer)
 			case secrets.Secret:
 				log.Print("Got a Secret")
 				return certFromSecret(resource.(secrets.Secret))
@@ -106,15 +106,6 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 	result := buf.String()
 
 	return result
-}
-
-func certFromCert(cert certs.Cert) string {
-	switch contentType := *cert.ContentType; contentType {
-	case "application/x-pem-file":
-		return certutil.PemCertFromBytes(*cert.Cer)
-	default:
-		panic(fmt.Sprintf("Got unexpected content type: %v", contentType))
-	}
 }
 
 func certFromSecret(secret secrets.Secret) string {
