@@ -4,9 +4,12 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/Masterminds/sprig"
+	"github.com/covermymeds/azure-key-vault-agent/certs"
 	"github.com/covermymeds/azure-key-vault-agent/certutil"
 	"github.com/covermymeds/azure-key-vault-agent/resource"
+	"github.com/covermymeds/azure-key-vault-agent/secrets"
 	"io/ioutil"
+	"log"
 	"text/template"
 )
 
@@ -39,23 +42,17 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 			}
 			return privateKey
 		},
-		"cert": func(name string) string {
-			// TODO: If the cert can be found on either a Cert or a Secret, we should handle discovering it from both
-			value, ok := resourceMap.Secrets[name]
-			cert := ""
-			if ok {
-				switch contentType := *value.ContentType; contentType {
-				case "application/x-pem-file":
-					cert = certutil.PemCertFromPem(*value.Value)
-				case "application/x-pkcs12":
-					cert = certutil.PemCertFromPkcs12(*value.Value)
-				default:
-					panic(fmt.Sprintf("Got unexpected content type: %v", contentType))
-				}
-			} else {
-				panic(fmt.Sprintf("cert lookup failed: Expected a Secret with name %v", name))
+		"cert": func(resource resource.Resource) string {
+			switch t := resource.(type) {
+			case certs.Cert:
+				log.Print("Got a Cert")
+				return certFromCert(resource.(certs.Cert))
+			case secrets.Secret:
+				log.Print("Got a Secret")
+				return certFromSecret(resource.(secrets.Secret))
+			default:
+				panic(fmt.Sprintf("Got unexpected type: %v", t))
 			}
-			return cert
 		},
 		"issuers": func(name string) string {
 			value, ok := resourceMap.Secrets[name]
@@ -109,4 +106,24 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 	result := buf.String()
 
 	return result
+}
+
+func certFromCert(cert certs.Cert) string {
+	switch contentType := *cert.ContentType; contentType {
+	case "application/x-pem-file":
+		return certutil.PemCertFromBytes(*cert.Cer)
+	default:
+		panic(fmt.Sprintf("Got unexpected content type: %v", contentType))
+	}
+}
+
+func certFromSecret(secret secrets.Secret) string {
+	switch contentType := *secret.ContentType; contentType {
+	case "application/x-pem-file":
+		return certutil.PemCertFromPem(*secret.Value)
+	case "application/x-pkcs12":
+		return certutil.PemCertFromPkcs12(*secret.Value)
+	default:
+		panic(fmt.Sprintf("Got unexpected content type: %v", contentType))
+	}
 }
