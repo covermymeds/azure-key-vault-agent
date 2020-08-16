@@ -138,6 +138,20 @@ func PemChainFromPem(data string, justIssuers bool) string {
 	return SortedChain(certAndKey.Certificate, justIssuers)
 }
 
+func PemChainFromBytes(derBytes []byte, justIssuers bool) string {
+	certs, err := x509.ParseCertificates(derBytes)
+	if err != nil {
+		panic(fmt.Sprintf("Error parsing Certificate: %v", err))
+	}
+
+	var rawCerts [][]byte
+	for _, c := range certs {
+		rawCerts = append(rawCerts, c.Raw)
+	}
+
+	return SortedChain(rawCerts, justIssuers)
+}
+
 func SortedChain(rawChain [][]byte, justIssuers bool) string {
 	g := graph.New(graph.Directed)
 
