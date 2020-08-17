@@ -128,7 +128,7 @@ Complete List of Cert Helpers:
 `fullChain` - returns full certificate chain including leaf cert in PEM format.
 
 Note: 
-- The resource type `cert` does not contain any chain information due to the way Azure stores the data.  If you wish to use `issuers` or `fullChain` helpers, you must do so on a `secret` resource.  An empty string will be returned if you try to run either on a `cert` resource.
+- The resource type `cert` does not contain any chain information due to the way Azure stores the data.  If you wish to use `issuers` or `fullChain` helpers, you must do so on a `secret` resource.
 - The `issuers` and `fullChain` helpers will do their best to reconstruct the chain, but can only work with the data
 given.  So if you did not store your certificate with its chain an empty string will be returned.
 ### Multiple secrets in a file

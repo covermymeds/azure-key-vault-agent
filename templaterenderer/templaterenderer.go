@@ -45,26 +45,24 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 				panic(fmt.Sprintf("Got unexpected type: %v", t))
 			}
 		},
-		"issuers": func(resource resource.Resource) string {
-			switch t := resource.(type) {
-			case certs.Cert:
-				cert := resource.(certs.Cert)
-				return certutil.PemChainFromBytes(*cert.Cer, true)
-			case secrets.Secret:
-				return issuersFromSecret(resource.(secrets.Secret), true)
+		"issuers": func(secret secrets.Secret) string {
+			switch contentType := *secret.ContentType; contentType {
+			case "application/x-pem-file":
+				return certutil.PemChainFromPem(*secret.Value, true)
+			case "application/x-pkcs12":
+				return certutil.PemChainFromPkcs12(*secret.Value, true)
 			default:
-				panic(fmt.Sprintf("Got unexpected type: %v", t))
+				panic(fmt.Sprintf("Got unexpected content type: %v", contentType))
 			}
 		},
-		"fullChain": func(resource resource.Resource) string {
-			switch t := resource.(type) {
-			case certs.Cert:
-				cert := resource.(certs.Cert)
-				return certutil.PemChainFromBytes(*cert.Cer, false)
-			case secrets.Secret:
-				return issuersFromSecret(resource.(secrets.Secret), false)
+		"fullChain": func(secret secrets.Secret) string {
+			switch contentType := *secret.ContentType; contentType {
+			case "application/x-pem-file":
+				return certutil.PemChainFromPem(*secret.Value, false)
+			case "application/x-pkcs12":
+				return certutil.PemChainFromPkcs12(*secret.Value, false)
 			default:
-				panic(fmt.Sprintf("Got unexpected type: %v", t))
+				panic(fmt.Sprintf("Got unexpected content type: %v", contentType))
 			}
 		},
 	}
@@ -93,17 +91,6 @@ func certFromSecret(secret secrets.Secret) string {
 		return certutil.PemCertFromPem(*secret.Value)
 	case "application/x-pkcs12":
 		return certutil.PemCertFromPkcs12(*secret.Value)
-	default:
-		panic(fmt.Sprintf("Got unexpected content type: %v", contentType))
-	}
-}
-
-func issuersFromSecret(secret secrets.Secret, justIssuers bool) string {
-	switch contentType := *secret.ContentType; contentType {
-	case "application/x-pem-file":
-		return certutil.PemChainFromPem(*secret.Value, justIssuers)
-	case "application/x-pkcs12":
-		return certutil.PemChainFromPkcs12(*secret.Value, justIssuers)
 	default:
 		panic(fmt.Sprintf("Got unexpected content type: %v", contentType))
 	}
