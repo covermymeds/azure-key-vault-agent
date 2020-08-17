@@ -77,7 +77,7 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 	var buf bytes.Buffer
 	err = t.Execute(&buf, resourceMap)
 	if err != nil {
-		panic(fmt.Sprintf("Error executing template:\n%v\nResources:\n%v\nError:\n%v\n", templateContents, resourceMap, err))
+		panic(fmt.Sprintf("Error executing template: %v Error: %v", templateContents, err))
 	}
 
 	result := buf.String()
