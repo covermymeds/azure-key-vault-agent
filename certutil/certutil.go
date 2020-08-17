@@ -97,6 +97,16 @@ func PemCertFromPem(data string) string {
 	return certPem.String()
 }
 
+func PemCertFromBytes(derBytes []byte) string {
+	// Encode just the leaf cert as pem
+	var certPem bytes.Buffer
+	if err := pem.Encode(&certPem, &pem.Block{Type: "CERTIFICATE", Bytes: derBytes}); err != nil {
+		panic(fmt.Sprintf("Failed to write data: %s", err))
+	}
+
+	return certPem.String()
+}
+
 func PemChainFromPkcs12(b64pkcs12 string, justIssuers bool) string {
 	p12, _ := base64.StdEncoding.DecodeString(b64pkcs12)
 

@@ -94,7 +94,7 @@ When you create a Cert in azure key vault, it automatically creates a Secret and
 
 To fetch the private key, you'll need to ensure that the Secret is in your resources section. You will also need to use the built-in `privateKey` and `cert` helpers to parse the blob into its respective pieces.
 
-Note: `cert` will only return the leaf certificate
+Note: `cert` helper will only return the leaf certificate
 
 In the example below, it is assumed you have created a PEM format certificate with the name `pem-test`:
 
@@ -109,12 +109,12 @@ workers:
     postChange: service nginx restart
     sinks:
       - path: ./pem-test.key
-        template: '{{ privateKey "pem-test" }}'
+        template: '{{ index .Secrets "pem-test" | privateKey }}'
         owner: myuser
         group: mygroup
         mode: 0600
       - path: ./pem-test.cert
-        template: '{{ cert "pem-test" }}'
+        template: '{{ index .Secrets "pem-test" | cert }}'
 ```
 
 Complete List of Cert Helpers:
@@ -127,9 +127,10 @@ Complete List of Cert Helpers:
 
 `fullChain` - returns full certificate chain including leaf cert in PEM format.
 
-Note: The `issuers` and `fullChain` helpers will do their best to reconstruct the chain, but can only work with the data
+Note: 
+- The resource type `cert` does not contain any chain information due to the way Azure stores the data.  If you wish to use `issuers` or `fullChain` helpers, you must do so on a `secret` resource.
+- The `issuers` and `fullChain` helpers will do their best to reconstruct the chain, but can only work with the data
 given.  So if you did not store your certificate with its chain an empty string will be returned.
-
 ### Multiple secrets in a file
 
 Let's suppose you had 4 secrets in a given key vault, `dbHost`, `dbName`, `dbUser`, `dbPass`.
