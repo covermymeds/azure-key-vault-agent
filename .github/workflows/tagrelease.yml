@@ -32,18 +32,23 @@ jobs:
   dockerbuild:
     runs-on: ubuntu-latest
     steps:
-      - name: Get the pushed tag
+      -
+        name: Checkout code
+        uses: actions/checkout@v2
+
+      -
+        name: Get the pushed tag
         id: vars
         run: echo ::set-output name=tag::${GITHUB_REF/refs\/tags\//}
 
-      - name: ACR build
-        id: acr
-        uses: ams0/acr-task-github-action@v1
+      -
+        name: Build and push
+        id: docker_build
+        uses: docker/build-push-action@v1
         with:
-          service_principal: ${{ secrets.service_principal }}
-          service_principal_password: ${{ secrets.service_principal_password }}
-          tenant: ${{ secrets.tenant }}
-          registry: covermymeds
-          repository: cmm
-          image: azure-key-vault-agent
-          tag: ${{ steps.vars.outputs.tag }}
+          push: true
+          registry: covermymeds.azurecr.io
+          username: ${{ secrets.service_principal }}
+          password: ${{ secrets.service_principal_password }}
+          repository: cmm/azure-key-vault-agent
+          tags: ${{ steps.vars.outputs.tag }}
