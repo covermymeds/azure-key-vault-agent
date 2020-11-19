@@ -1,8 +1,15 @@
 FROM golang:alpine as builder
 WORKDIR /go/src/app
-COPY . .
-RUN CGO_ENABLED=0 go install -ldflags '-extldflags "-static"'
 
+# Fetch dependencies
+COPY go.mod go.sum ./
+RUN go mod download
+
+# Build the binary
+COPY . .
+RUN CGO_ENABLED=0 go build -ldflags '-extldflags "-static"' -o /go/bin/azure-key-vault-agent
+
+# Start a new stage and copy the built binary
 FROM alpine
 COPY --from=builder /go/bin/azure-key-vault-agent /azure-key-vault-agent
-CMD ["/azure-key-vault-agent", "-config", "/akva.yaml"]
+ENTRYPOINT ["/azure-key-vault-agent"]
