@@ -3,10 +3,10 @@ package config
 type ResourceKind string
 
 const (
-	CertKind    ResourceKind = "cert"
-	KeyKind     ResourceKind = "key"
-	SecretKind  ResourceKind = "secret"
-	SecretsKind ResourceKind = "all-secrets"
+	CertKind       ResourceKind = "cert"
+	KeyKind        ResourceKind = "key"
+	SecretKind     ResourceKind = "secret"
+	AllSecretsKind ResourceKind = "all-secrets"
 )
 
 type ResourceConfig struct {
