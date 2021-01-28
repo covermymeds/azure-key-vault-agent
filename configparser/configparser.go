@@ -128,7 +128,19 @@ func parseWorkerConfigs(config Config) {
 		config.Workers[i].TimeFrequency = frequencyConverter(workerConfig.Frequency)
 
 		// Check each resourceConfig in the workerConfig
+		secretKind := false
+		allSecretsKind := false
 		for j, _ := range workerConfig.Resources {
+			if !secretKind && config.Workers[i].Resources[j].Kind == "secret" {
+				secretKind = true
+			}
+			if !allSecretsKind && config.Workers[i].Resources[j].Kind == "all-secrets" {
+				allSecretsKind = true
+			}
+			if secretKind && allSecretsKind {
+				panic(fmt.Sprintf("Error parsing worker config: all-secrets kind will overwrite secrets. Please only use one or the other"))
+			}
+
 			// If no Credential is specified, default to "default"
 			if config.Workers[i].Resources[j].Credential == "" {
 				config.Workers[i].Resources[j].Credential = "default"
