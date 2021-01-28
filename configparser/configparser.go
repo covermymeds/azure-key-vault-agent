@@ -138,7 +138,11 @@ func parseWorkerConfigs(config Config) {
 				allSecretsKind = true
 			}
 			if secretKind && allSecretsKind {
-				panic(fmt.Sprintf("Error parsing worker config: all-secrets kind will overwrite secrets. Please only use one or the other"))
+				panic(fmt.Sprintf("Error parsing worker config: all-secrets resource will overwrite secrets. Please only use one or the other"))
+			}
+
+			if config.Workers[i].Resources[j].Kind != "all-secrets" && config.Workers[i].Resources[j].Name == "" {
+				panic(fmt.Sprintf("Error parsing worker config: Name is required for %v resource", config.Workers[i].Resources[j].Kind))
 			}
 
 			// If no Credential is specified, default to "default"
