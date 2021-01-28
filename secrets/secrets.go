@@ -28,11 +28,11 @@ func GetSecret(client keyvault.BaseClient, vaultBaseURL string, secretName strin
 	return result, nil
 }
 
-func GetSecretByURL(client keyvault.BaseClient, secretURL string) (Secret, error) {
+func GetSecretByURL(client keyvault.BaseClient, secretURL string) (string, Secret, error) {
 	u, err := url.Parse(secretURL)
 	if err != nil {
 		log.Printf("Failed to parse URL for secret: %v", err.Error())
-		return Secret{}, err
+		return "invalid", Secret{}, err
 	}
 	vaultBaseURL := fmt.Sprintf("%v://%v", u.Scheme, u.Host)
 
@@ -43,30 +43,30 @@ func GetSecretByURL(client keyvault.BaseClient, secretURL string) (Secret, error
 	result, err := GetSecret(client, vaultBaseURL, secretName, "")
 	if err != nil {
 		log.Printf("Failed to get secret from parsed values %v and %v: %v", vaultBaseURL, secretName, err.Error())
-		return Secret{}, err
+		return "invalid", Secret{}, err
 	}
 
-	return result, nil
+	return secretName, result, nil
 }
 
-func GetSecrets(client keyvault.BaseClient, vaultBaseURL string) (results []Secret, err error) {
+func GetSecrets(client keyvault.BaseClient, vaultBaseURL string) (results map[string]Secret, err error) {
 	max := int32(25)
 	pages, err := client.GetSecrets(context.Background(), vaultBaseURL, &max)
 	if err != nil {
 		log.Printf("Error getting secret: %v", err.Error())
-		return []Secret{}, err
+		return map[string]Secret{}, err
 	}
 
 	for {
 		for _, value := range pages.Values() {
 			secretURL := *value.ID
-			secret, err := GetSecretByURL(client, secretURL)
+			secretName, secret, err := GetSecretByURL(client, secretURL)
 			if err != nil {
 				log.Printf("Error loading secret contents: %v", err.Error())
 				return nil, err
 			}
 
-			results = append(results, secret)
+			results[secretName] = secret
 		}
 
 		if pages.NotDone() {
