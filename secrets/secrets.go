@@ -52,6 +52,7 @@ func GetSecretByURL(client keyvault.BaseClient, secretURL string) (string, Secre
 func GetSecrets(client keyvault.BaseClient, vaultBaseURL string) (results map[string]Secret, err error) {
 	max := int32(25)
 	pages, err := client.GetSecrets(context.Background(), vaultBaseURL, &max)
+	results = make(map[string]Secret)
 	if err != nil {
 		log.Printf("Error getting secret: %v", err.Error())
 		return map[string]Secret{}, err
