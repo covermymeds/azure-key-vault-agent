@@ -98,6 +98,13 @@ func Process(ctx context.Context, clients client.Clients, workerConfig config.Wo
 			}
 			resources.Secrets[resourceConfig.Name] = result
 
+		case config.AllSecretsKind:
+			result, err := secrets.GetSecrets(client, resourceConfig.VaultBaseURL)
+			if err != nil {
+				return err
+			}
+			resources.Secrets = result
+
 		case config.KeyKind:
 			result, err := keys.GetKey(client, resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
 			if err != nil {

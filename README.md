@@ -53,10 +53,14 @@ as a credential with the name `default` if you don't override `default` within y
 
 ## Resources
 
-The `resources` section is a list of one or more resources to fetch. Each resource has a `kind`, `name`,
-`vaultBaseURL`, and optional `credential` field.
+The `resources` section is a list of one or more resources to fetch. Each resource has a `kind`, `vaultBaseURL`,
+and optional `credential` field.
 
-Valid kinds are: `cert`, `secret`, `key`.
+Valid kinds are: `cert`, `secret`, `all-secrets`, and `key`.
+
+Note: The `all-secrets` fetches all of the secrets found in the vault, and cannot be used in conjunction with any specific secrets for the same vaultBaseURL
+
+Unless a resource has a `kind` of `all-secrets`, there is also a required `name` field for the resource.
 
 If you don't specify `credential`, a credential with the name `default` will be used (you can either
 specify the `default` credential in the `credentials` array, or as ENV vars / .env file)
@@ -127,7 +131,7 @@ Complete List of Cert Helpers:
 
 `fullChain` - returns full certificate chain including leaf cert in PEM format.
 
-Note: 
+Note:
 - The resource type `cert` does not contain any chain information due to the way Azure stores the data.  If you wish to use `issuers` or `fullChain` helpers, you must do so on a `secret` resource.
 - The `issuers` and `fullChain` helpers will do their best to reconstruct the chain, but can only work with the data
 given.  So if you did not store your certificate with its chain an empty string will be returned.
@@ -135,8 +139,9 @@ given.  So if you did not store your certificate with its chain an empty string 
 
 Let's suppose you had 4 secrets in a given key vault, `dbHost`, `dbName`, `dbUser`, `dbPass`.
 
-Here's a sample config:
+Here's some sample configs:
 
+#### Using individual secret lookups
 ```yaml
 workers:
   -
@@ -158,6 +163,38 @@ workers:
     sinks:
       - path: ./config.yml
         template: "databaseUrl: psql://{{ .Secrets.dbUser.Value }}:{{ .Secrets.dbPass.Value }}@{{ .Secrets.dbHost.Value }}/{{ .Secrets.dbName.Value }}"
+```
+
+#### Using all-secrets
+```yaml
+workers:
+  -
+    resources:
+      - kind: all-secrets
+        vaultBaseURL: https://test-kv.vault.azure.net/
+    frequency: 60s
+    postChange: docker restart webapp
+    sinks:
+      - path: ./config.yml
+        template: "databaseUrl: psql://{{ .Secrets.dbUser.Value }}:{{ .Secrets.dbPass.Value }}@{{ .Secrets.dbHost.Value }}/{{ .Secrets.dbName.Value }}"
+```
+
+You can also use the built-in `toValues` helper to get key/value pairs of all of your secrets.
+```yaml
+workers:
+  -
+    resources:
+      - kind: all-secrets
+        vaultBaseURL: https://test-kv.vault.azure.net/
+    frequency: 60s
+    postChange: docker restart webapp
+    sinks:
+      - path: ./config.json
+        template: "{{ index .Secrets | toValues | toJson }"
+```
+will output the following in the `config.json` file
+```json
+{ "dbHost": "my-host", "dbName": "my-db", "dbUser": "my-user", "dbPass": "my-pass" }
 ```
 
 ### Resources with special characters in their name

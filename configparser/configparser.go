@@ -128,7 +128,26 @@ func parseWorkerConfigs(config Config) {
 		config.Workers[i].TimeFrequency = frequencyConverter(workerConfig.Frequency)
 
 		// Check each resourceConfig in the workerConfig
+		configMap := make(map[string]int)
 		for j, _ := range workerConfig.Resources {
+			_, ok := configMap[config.Workers[i].Resources[j].VaultBaseURL]
+			if !ok {
+				configMap[config.Workers[i].Resources[j].VaultBaseURL] = 0
+			}
+			if config.Workers[i].Resources[j].Kind == "secret" {
+				configMap[config.Workers[i].Resources[j].VaultBaseURL] |= 1
+			}
+			if config.Workers[i].Resources[j].Kind == "all-secrets" {
+				configMap[config.Workers[i].Resources[j].VaultBaseURL] |= 2
+			}
+			if configMap[config.Workers[i].Resources[j].VaultBaseURL] == 3 {
+				panic(fmt.Sprintf("Error parsing worker config: all-secrets resource will overwrite secrets. Please only use one or the other for the vault at %s", config.Workers[i].Resources[j].VaultBaseURL))
+			}
+
+			if config.Workers[i].Resources[j].Kind != "all-secrets" && config.Workers[i].Resources[j].Name == "" {
+				panic(fmt.Sprintf("Error parsing worker config: Name is required for %v resource", config.Workers[i].Resources[j].Kind))
+			}
+
 			// If no Credential is specified, default to "default"
 			if config.Workers[i].Resources[j].Credential == "" {
 				config.Workers[i].Resources[j].Credential = "default"

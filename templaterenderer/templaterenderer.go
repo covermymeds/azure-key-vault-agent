@@ -65,6 +65,13 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 				panic(fmt.Sprintf("Got unexpected content type: %v", contentType))
 			}
 		},
+		"toValues": func(secrets map[string]secrets.Secret) map[string]string {
+			secretValues := make(map[string]string)
+			for key, secret := range secrets {
+				secretValues[key] = *secret.Value
+			}
+			return secretValues
+		},
 	}
 
 	// Init the template
