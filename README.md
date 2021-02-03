@@ -58,7 +58,7 @@ and optional `credential` field.
 
 Valid kinds are: `cert`, `secret`, `all-secrets`, and `key`.
 
-Note: The `all-secrets` resource cannot be used with any `secret` resources.
+Note: The `all-secrets` fetches all of the secrets found in the vault, and cannot be used in conjunction with any specific secrets for the same vaultBaseURL
 
 Unless a resource has a `kind` of `all-secrets`, there is also a required `name` field for the resource.
 
@@ -190,7 +190,7 @@ workers:
     postChange: docker restart webapp
     sinks:
       - path: ./config.json
-        template: "{{ index .Secrets | toValues | toJson }""
+        template: "{{ index .Secrets | toValues | toJson }"
 ```
 will output the following in the `config.json` file
 ```json
