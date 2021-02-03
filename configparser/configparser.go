@@ -128,17 +128,20 @@ func parseWorkerConfigs(config Config) {
 		config.Workers[i].TimeFrequency = frequencyConverter(workerConfig.Frequency)
 
 		// Check each resourceConfig in the workerConfig
-		secretKind := false
-		allSecretsKind := false
+		configMap := make(map[string]int)
 		for j, _ := range workerConfig.Resources {
-			if !secretKind && config.Workers[i].Resources[j].Kind == "secret" {
-				secretKind = true
+			_, ok := configMap[config.Workers[i].Resources[j].VaultBaseURL]
+			if !ok {
+				configMap[config.Workers[i].Resources[j].VaultBaseURL] = 0
 			}
-			if !allSecretsKind && config.Workers[i].Resources[j].Kind == "all-secrets" {
-				allSecretsKind = true
+			if config.Workers[i].Resources[j].Kind == "secret" {
+				configMap[config.Workers[i].Resources[j].VaultBaseURL] |= 1
 			}
-			if secretKind && allSecretsKind {
-				panic(fmt.Sprintf("Error parsing worker config: all-secrets resource will overwrite secrets. Please only use one or the other"))
+			if config.Workers[i].Resources[j].Kind == "all-secrets" {
+				configMap[config.Workers[i].Resources[j].VaultBaseURL] |= 2
+			}
+			if configMap[config.Workers[i].Resources[j].VaultBaseURL] == 3 {
+				panic(fmt.Sprintf("Error parsing worker config: all-secrets resource will overwrite secrets. Please only use one or the other for the vault at %s", config.Workers[i].Resources[j].VaultBaseURL))
 			}
 
 			if config.Workers[i].Resources[j].Kind != "all-secrets" && config.Workers[i].Resources[j].Name == "" {
