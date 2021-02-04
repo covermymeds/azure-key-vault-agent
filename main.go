@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"github.com/covermymeds/azure-key-vault-agent/configwatcher"
-	"github.com/covermymeds/azure-key-vault-agent/worker"
 	"github.com/luci/luci-go/common/flag/flagenum"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -98,7 +97,7 @@ func main() {
 	}()
 
 	if runOnce {
-		worker.WorkerOnce(configFile)
+		configwatcher.ParseAndRunWorkersOnce(configFile)
 	} else {
 		configwatcher.Watcher(configFile)
 	}
