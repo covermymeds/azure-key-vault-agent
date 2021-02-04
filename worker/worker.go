@@ -13,6 +13,7 @@ import (
 	"github.com/covermymeds/azure-key-vault-agent/certs"
 	"github.com/covermymeds/azure-key-vault-agent/client"
 	"github.com/covermymeds/azure-key-vault-agent/config"
+	"github.com/covermymeds/azure-key-vault-agent/configparser"
 	"github.com/covermymeds/azure-key-vault-agent/keys"
 	"github.com/covermymeds/azure-key-vault-agent/resource"
 	"github.com/covermymeds/azure-key-vault-agent/secrets"
@@ -22,6 +23,26 @@ import (
 )
 
 const RetryBreakPoint = 60
+
+func WorkerOnce(path string) {
+	// Parse config file
+	config := configparser.ParseConfig(path)
+
+	// Initialize clients
+	clients := make(client.Clients)
+	for _, credentialConfig := range config.Credentials {
+		clients[credentialConfig.Name] = client.NewClient(credentialConfig)
+	}
+
+	// Start workers
+	log.Printf("Running workers once")
+	for _, workerConfig := range config.Workers {
+		err := Process(nil, clients, workerConfig)
+		if err != nil {
+			log.Printf("Failed to get resource(s): %v", err)
+		}
+	}
+}
 
 func Worker(ctx context.Context, clients client.Clients, workerConfig config.WorkerConfig) {
 	defer func() {

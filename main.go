@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/covermymeds/azure-key-vault-agent/configwatcher"
+	"github.com/covermymeds/azure-key-vault-agent/worker"
 	"github.com/luci/luci-go/common/flag/flagenum"
 	log "github.com/sirupsen/logrus"
 	"os"
@@ -40,6 +41,7 @@ var output outputType
 var help bool
 var debugMode bool
 var ver bool
+var runOnce bool
 
 func init() {
 	fs := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
@@ -51,6 +53,7 @@ func init() {
 	fs.StringVar(&configFile, "c", "", "Read config from this `file` (shorthand)")
 	fs.Var(&output, "output", fmt.Sprintf("Output type (default json). Options are: %v (default json)", outputTypeEnum.Choices()))
 	fs.BoolVar(&ver, "version", false, "Show the version of akva-key-vault-agent")
+	fs.BoolVar(&runOnce, "once", false, "Run once and quit")
 
 	fs.Parse(os.Args[1:])
 
@@ -94,5 +97,9 @@ func main() {
 		}
 	}()
 
-	configwatcher.Watcher(configFile)
+	if runOnce {
+		worker.WorkerOnce(configFile)
+	} else {
+		configwatcher.Watcher(configFile)
+	}
 }
