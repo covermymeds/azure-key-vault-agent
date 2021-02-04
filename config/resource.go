@@ -10,9 +10,10 @@ const (
 )
 
 type ResourceConfig struct {
-	Kind         ResourceKind `yaml:"kind,omitempty" validate:"required,oneof=cert key secret all-secrets"`
-	VaultBaseURL string       `yaml:"vaultBaseURL,omitempty" validate:"required,url"`
-	Name         string       `yaml:"name"`
+	Alias        string       `yaml:"alias,omitempty"`
 	Credential   string       `yaml:"credential,omitempty"`
+	Kind         ResourceKind `yaml:"kind,omitempty" validate:"required,oneof=cert key secret all-secrets"`
+	Name         string       `yaml:"name"`
+	VaultBaseURL string       `yaml:"vaultBaseURL,omitempty" validate:"required,url"`
 	Version      string       `yaml:"version,omitempty"`
 }
