@@ -41,5 +41,5 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
           registry: docker.pkg.github.com
-          repository: covermymeds/azure-key-vault-agent
+          repository: covermymeds/azure-key-vault-agent/azure-key-vault-agent
           tag_with_ref: true
