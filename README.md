@@ -276,7 +276,7 @@ workers:
 
 # Workers
 
-Workers work in a loop, whose frequency is controlled by the `frequency` field in your config. Each iteration of the loop, the worker performs the following:
+Workers default to working in a loop, whose frequency is controlled by the `frequency` field in your config. Each iteration of the loop, the worker performs the following:
 
 * Fetch all of the specified resources
 * If any errors occur, fail the iteration and:
@@ -286,6 +286,8 @@ Workers work in a loop, whose frequency is controlled by the `frequency` field i
   * Load and/or parse the specified template, and render it using the fetched resources
   * Compare the results of the template to the contents of the destination path
   * If the contents differ, trigger any `preChange` hook, write the contents to the `path`, and trigger any `postChange` hook
+
+If you want to run your workers once and then exit, pass the `--once` option to the executable.
 
 # Config watcher
 

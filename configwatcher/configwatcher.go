@@ -36,6 +36,26 @@ func Watcher(path string) {
 	<-done // Block until done
 }
 
+func ParseAndRunWorkersOnce(path string) {
+	// Parse config file
+	config := configparser.ParseConfig(path)
+
+	// Initialize clients
+	clients := make(client.Clients)
+	for _, credentialConfig := range config.Credentials {
+		clients[credentialConfig.Name] = client.NewClient(credentialConfig)
+	}
+
+	// Start workers
+	log.Printf("Running workers once")
+	for _, workerConfig := range config.Workers {
+		err := worker.Process(nil, clients, workerConfig)
+		if err != nil {
+			log.Fatalf("Failed to get resource(s): %v", err)
+		}
+	}
+}
+
 func parseAndStartWorkers(path string) context.CancelFunc {
 	// Create background context for workers
 	ctx, cancel := context.WithCancel(context.Background())
