@@ -12,6 +12,12 @@ import (
 
 type outputType uint
 
+var (
+	version = "dev"
+	commit  = "none"
+	date    = "unknown"
+)
+
 var outputTypeEnum = flagenum.Enum{
 	"json": outputType(10),
 	"text": outputType(20),
@@ -33,6 +39,7 @@ var configFile string
 var output outputType
 var help bool
 var debugMode bool
+var ver bool
 
 func init() {
 	fs := flag.NewFlagSet(os.Args[0], flag.ExitOnError)
@@ -43,11 +50,17 @@ func init() {
 	fs.StringVar(&configFile, "config", "", "Read config from this `file`")
 	fs.StringVar(&configFile, "c", "", "Read config from this `file` (shorthand)")
 	fs.Var(&output, "output", fmt.Sprintf("Output type (default json). Options are: %v (default json)", outputTypeEnum.Choices()))
+	fs.BoolVar(&ver, "version", false, "Show the version of akva-key-vault-agent")
 
 	fs.Parse(os.Args[1:])
 
 	if help {
 		fs.PrintDefaults()
+		os.Exit(0)
+	}
+
+	if ver {
+		fmt.Printf("Version: %s\nCommit: %s\nBuilt on %s\n", version, commit, date)
 		os.Exit(0)
 	}
 
