@@ -29,26 +29,17 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-  dockerbuild:
+  push_to_registry:
+    name: Push Docker image to GitHub Packages
     runs-on: ubuntu-latest
     steps:
-      -
-        name: Checkout code
+      - name: Check out the repo
         uses: actions/checkout@v2
-
-      -
-        name: Get the pushed tag
-        id: vars
-        run: echo ::set-output name=tag::${GITHUB_REF/refs\/tags\//}
-
-      -
-        name: Build and push
-        id: docker_build
+      - name: Push to GitHub Packages
         uses: docker/build-push-action@v1
         with:
-          push: true
-          registry: covermymeds.azurecr.io
-          username: ${{ secrets.service_principal }}
-          password: ${{ secrets.service_principal_password }}
-          repository: cmm/azure-key-vault-agent
-          tags: ${{ steps.vars.outputs.tag }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          registry: docker.pkg.github.com
+          repository: covermymeds/azure-key-vault-agent
+          tag_with_ref: true
