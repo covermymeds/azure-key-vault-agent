@@ -90,6 +90,9 @@ func Process(ctx context.Context, clients client.Clients, workerConfig config.Wo
 				return err
 			}
 			resources.Certs[resourceConfig.Name] = result
+			if resourceConfig.Alias != "" {
+				resources.Certs[resourceConfig.Alias] = result
+			}
 
 		case config.SecretKind:
 			result, err := secrets.GetSecret(client, resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
@@ -97,6 +100,9 @@ func Process(ctx context.Context, clients client.Clients, workerConfig config.Wo
 				return err
 			}
 			resources.Secrets[resourceConfig.Name] = result
+			if resourceConfig.Alias != "" {
+				resources.Secrets[resourceConfig.Alias] = result
+			}
 
 		case config.AllSecretsKind:
 			result, err := secrets.GetSecrets(client, resourceConfig.VaultBaseURL)
@@ -111,6 +117,9 @@ func Process(ctx context.Context, clients client.Clients, workerConfig config.Wo
 				return err
 			}
 			resources.Keys[resourceConfig.Name] = result
+			if resourceConfig.Alias != "" {
+				resources.Keys[resourceConfig.Alias] = result
+			}
 
 		default:
 			panic(fmt.Sprintf("Invalid sink kind: %v", resourceConfig.Kind))

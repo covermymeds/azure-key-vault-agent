@@ -65,6 +65,23 @@ Unless a resource has a `kind` of `all-secrets`, there is also a required `name`
 If you don't specify `credential`, a credential with the name `default` will be used (you can either
 specify the `default` credential in the `credentials` array, or as ENV vars / .env file)
 
+### Aliases
+
+A resource with a kind set to `cert`, `secret`, or `key` may specify an alias. This alias may be used to reference the resource in your specified `sink`:
+
+```yaml
+workers:
+  -
+    resources:
+      - kind: secret
+        name: my-application-password
+        alias: pass
+        vaultBaseURL: https://test-kv.vault.azure.net/
+    sinks:
+      - path: ./password
+        template: "{{ .Secrets.pass.Value }}"
+```
+
 ## Sinks
 
 The `sinks` section is a list of one or more files to write to. Each sink has a `path` and either `template` (inline template) or `templatePath` (path to template on the filesystem). The template syntax is golang's [text/template](https://golang.org/pkg/text/template/#hdr-Text_and_spaces) library (with [sprig](https://github.com/Masterminds/sprig) helpers).
