@@ -16,7 +16,7 @@ import (
 	"strings"
 )
 
-// Takes Base64 Encoded PKCS12 as String and produces
+// Takes Base64 Encoded PKCS12 as String and produces PEM Encoded PCKS8 Private Key as String
 func PemPrivateKeyFromPkcs12(b64pkcs12 string) string {
 	p12, _ := base64.StdEncoding.DecodeString(b64pkcs12)
 
@@ -29,6 +29,7 @@ func PemPrivateKeyFromPkcs12(b64pkcs12 string) string {
 	return findPrivateKeyInPemBlocks(blocks)
 }
 
+// Takes PEM Encoded data as String and produces PEM Encoded PCKS8 Private Key as String
 func PemPrivateKeyFromPem(data string) string {
 	// Convert string to Pem Blocks
 	blocks := stringToPemBlocks(data)
@@ -36,6 +37,7 @@ func PemPrivateKeyFromPem(data string) string {
 	return findPrivateKeyInPemBlocks(blocks)
 }
 
+// Takes Base64 Encoded PKCS12 as String and produces PEM Encoded x509 Certificate as String
 func PemCertFromPkcs12(b64pkcs12 string) string {
 	p12, _ := base64.StdEncoding.DecodeString(b64pkcs12)
 
@@ -48,6 +50,7 @@ func PemCertFromPkcs12(b64pkcs12 string) string {
 	return findLeafCertInPemBlocks(blocks)
 }
 
+// Takes PEM Encoded data as String and produces PEM Encoded x509 Certificate as String
 func PemCertFromPem(data string) string {
 	//Convert string to pem blocks
 	blocks := stringToPemBlocks(data)
@@ -55,6 +58,7 @@ func PemCertFromPem(data string) string {
 	return findLeafCertInPemBlocks(blocks)
 }
 
+// Takes DER Encoded Byte Array and produces PEM Encoded x509 Certificate as String
 func PemCertFromBytes(derBytes []byte) string {
 	// Encode just the leaf cert as pem
 	var certPem bytes.Buffer
@@ -65,6 +69,7 @@ func PemCertFromBytes(derBytes []byte) string {
 	return certPem.String()
 }
 
+// Takes Base64 Encoded PKCS12 as String and produces PEM Encoded x509 Certificate Chain as String
 func PemChainFromPkcs12(b64pkcs12 string, justIssuers bool) string {
 	p12, _ := base64.StdEncoding.DecodeString(b64pkcs12)
 
@@ -77,6 +82,7 @@ func PemChainFromPkcs12(b64pkcs12 string, justIssuers bool) string {
 	return findChainInPemBlocks(blocks, justIssuers)
 }
 
+// Takes PEM Encoded data as String and produces PEM Encoded x509 Certificate Chain as String
 func PemChainFromPem(data string, justIssuers bool) string {
 	// Get the PEM blocks from the string
 	blocks := stringToPemBlocks(data)
@@ -85,6 +91,7 @@ func PemChainFromPem(data string, justIssuers bool) string {
 	return findChainInPemBlocks(blocks, justIssuers)
 }
 
+// Sorts an array of x509.Certificate objects
 func SortedChain(certs []*x509.Certificate, justIssuers bool) []x509.Certificate {
 	g := graph.New(graph.Directed)
 
@@ -124,6 +131,7 @@ func SortedChain(certs []*x509.Certificate, justIssuers bool) []x509.Certificate
 	return sortedCerts
 }
 
+// Attempts to turn String data into array of pem.Block
 func stringToPemBlocks(data string) []*pem.Block {
 	// Build an array of pem.Block
 	var blocks []*pem.Block
@@ -139,6 +147,7 @@ func stringToPemBlocks(data string) []*pem.Block {
 	return blocks
 }
 
+// Attempts to find Private key in array of pem.Block and return it as PEM Encoded PKCS8 String
 func findPrivateKeyInPemBlocks(blocks []*pem.Block ) string {
 	var keyBuffer bytes.Buffer
 	//Find the private key from all the blocks
@@ -187,6 +196,7 @@ func parsePrivateKey(der []byte) (crypto.PrivateKey, error) {
 	return nil, errors.New("tls: failed to parse private key")
 }
 
+// Attempts to find leaf certificate in array of pem.Block data and return as PEM Encoded x509 Certificate
 func findLeafCertInPemBlocks(blocks []*pem.Block) string {
 	var certs []*x509.Certificate
 	//Find all the Certificate blocks
@@ -215,6 +225,7 @@ func findLeafCertInPemBlocks(blocks []*pem.Block) string {
 	return certBuffer.String()
 }
 
+// Attempts to find chain in array of pem.Block and return as PEM Encoded Sorted Chain of x509 Certificates
 func findChainInPemBlocks(blocks []*pem.Block, justIssuers bool) string {
 	var certs []*x509.Certificate
 	//Find all the Certificate blocks
