@@ -46,15 +46,15 @@ func PemCertFromPkcs12(b64pkcs12 string) string {
 	if err != nil {
 		panic(err)
 	}
-
+	// Find the Certificate from these blocks
 	return findLeafCertInPemBlocks(blocks)
 }
 
 // Takes PEM Encoded data as String and produces PEM Encoded x509 Certificate as String
 func PemCertFromPem(data string) string {
-	//Convert string to pem blocks
+	// Convert string to pem blocks
 	blocks := stringToPemBlocks(data)
-	//Find leaf cert and return
+	// Find the Certificate from these blocks
 	return findLeafCertInPemBlocks(blocks)
 }
 
@@ -78,7 +78,7 @@ func PemChainFromPkcs12(b64pkcs12 string, justIssuers bool) string {
 	if err != nil {
 		panic(err)
 	}
-
+	// Find the Certificate chain  from these blocks
 	return findChainInPemBlocks(blocks, justIssuers)
 }
 
@@ -87,7 +87,7 @@ func PemChainFromPem(data string, justIssuers bool) string {
 	// Get the PEM blocks from the string
 	blocks := stringToPemBlocks(data)
 
-	// Sort and return the chain
+	// Find the Certificate chain  from these blocks
 	return findChainInPemBlocks(blocks, justIssuers)
 }
 
@@ -98,7 +98,7 @@ func SortedChain(certs []*x509.Certificate, justIssuers bool) []x509.Certificate
 	// Make a graph where each node represents a certificate and the key is its subject key identifier
 	certGraph := make(map[string]graph.Node, 0)
 
-	// Construct each certificate in the chain into a full certificate object
+	// For each cert make a graph node
 	for _, cert := range certs {
 		certGraph[string(cert.SubjectKeyId)] = g.MakeNode()
 		*certGraph[string(cert.SubjectKeyId)].Value = *cert
@@ -121,7 +121,7 @@ func SortedChain(certs []*x509.Certificate, justIssuers bool) []x509.Certificate
 
 	if justIssuers {
 		// If we only have the leaf cert there are no issuers to return
-		if len(sortedCerts) == 1 {
+		if len(sortedCerts) <= 1 {
 			return nil
 		} else {
 			return sortedCerts[1:]
@@ -165,6 +165,7 @@ func findPrivateKeyInPemBlocks(blocks []*pem.Block ) string {
 				panic(err)
 			}
 
+			// Encode the pkcs8 object as PEM
 			if err := pem.Encode(&keyBuffer, &pem.Block{Type: "PRIVATE KEY", Bytes: privBytes}); err != nil {
 				panic(fmt.Sprintf("Failed to write data: %s", err))
 			}
@@ -230,7 +231,7 @@ func findChainInPemBlocks(blocks []*pem.Block, justIssuers bool) string {
 	var certs []*x509.Certificate
 	//Find all the Certificate blocks
 	for _, block := range blocks {
-		// Private Key?
+		// Certificate?
 		if block.Type == "CERTIFICATE" {
 			cert, err := x509.ParseCertificate(block.Bytes)
 
