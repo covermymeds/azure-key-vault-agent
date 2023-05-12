@@ -9,7 +9,7 @@ require (
 	github.com/Azure/go-autorest/autorest/adal v0.8.1
 	github.com/Azure/go-autorest/autorest/to v0.4.0 // indirect
 	github.com/Azure/go-autorest/autorest/validation v0.3.0 // indirect
-	github.com/Masterminds/goutils v1.1.0 // indirect
+	github.com/Masterminds/goutils v1.1.1 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible
 	github.com/fsnotify/fsnotify v1.4.7
@@ -28,7 +28,8 @@ require (
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94
 	go.chromium.org/luci v0.0.0-20200814170619-378a717791e3 // indirect
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9
+	golang.org/x/crypto v0.9.0
+	golang.org/x/sys v0.8.0 // indirect
 	google.golang.org/genproto v0.0.0-20200814021100-8c09557e8a18 // indirect
 	gopkg.in/yaml.v2 v2.3.0
 )
