@@ -296,3 +296,14 @@ A filesystem watch is placed on the specified config file, and if the file is ch
 # Known Issues
 
 - Using a 4 digit `mode` on MacOS will only support `sticky` (i.e. `1644`). `setuid` and `setgid` do not work.
+
+# Development
+
+## Building locally
+* Run `go mod download` to download dependencies in the module cache
+* Add any test configuration to a local akva.yaml file
+* Run `go build . && ./azure-key-vault-agent -c ./akva.yaml` to build and run
+
+## Troubleshooting builds
+* If you run into any issues when running `go build .`, you may need to update package dependencies
+* You can update a single package with `go get -u <package name>`
