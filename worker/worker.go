@@ -3,12 +3,13 @@ package worker
 import (
 	"context"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"syscall"
 	"time"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/covermymeds/azure-key-vault-agent/certs"
 	"github.com/covermymeds/azure-key-vault-agent/client"

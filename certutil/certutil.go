@@ -11,9 +11,10 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"strings"
+
 	"github.com/twmb/algoimpl/go/graph"
 	"golang.org/x/crypto/pkcs12"
-	"strings"
 )
 
 // Takes Base64 Encoded PKCS12 as String and produces PEM Encoded PCKS8 Private Key as String
@@ -148,7 +149,7 @@ func stringToPemBlocks(data string) []*pem.Block {
 }
 
 // Attempts to find Private key in array of pem.Block and return it as PEM Encoded PKCS8 String
-func findPrivateKeyInPemBlocks(blocks []*pem.Block ) string {
+func findPrivateKeyInPemBlocks(blocks []*pem.Block) string {
 	var keyBuffer bytes.Buffer
 	//Find the private key from all the blocks
 	for _, block := range blocks {

@@ -3,9 +3,10 @@ package secrets
 import (
 	"context"
 	"fmt"
-	log "github.com/sirupsen/logrus"
 	"net/url"
 	"regexp"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/Azure/azure-sdk-for-go/services/keyvault/2016-10-01/keyvault"
 )
@@ -60,14 +61,18 @@ func GetSecrets(client keyvault.BaseClient, vaultBaseURL string) (results map[st
 
 	for {
 		for _, value := range pages.Values() {
-			secretURL := *value.ID
-			secretName, secret, err := GetSecretByURL(client, secretURL)
-			if err != nil {
-				log.Printf("Error loading secret contents: %v", err.Error())
-				return nil, err
+			if *value.Attributes.Enabled {
+				secretURL := *value.ID
+				secretName, secret, err := GetSecretByURL(client, secretURL)
+
+				if err != nil {
+					log.Printf("Error loading secret contents: %v", err.Error())
+					return nil, err
+				}
+
+				results[secretName] = secret
 			}
 
-			results[secretName] = secret
 		}
 
 		if pages.NotDone() {
