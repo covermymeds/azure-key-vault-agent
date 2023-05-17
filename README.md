@@ -148,6 +148,8 @@ Complete List of Cert Helpers:
 
 `fullChain` - returns full certificate chain including leaf cert in PEM format.
 
+`expandFullChain` - returns a map of secrets, including separate PEM and keys.
+
 Note:
 - The resource type `cert` does not contain any chain information due to the way Azure stores the data.  If you wish to use `issuers` or `fullChain` helpers, you must do so on a `secret` resource.
 - The `issuers` and `fullChain` helpers will do their best to reconstruct the chain, but can only work with the data
@@ -212,6 +214,24 @@ workers:
 will output the following in the `config.json` file
 ```json
 { "dbHost": "my-host", "dbName": "my-db", "dbUser": "my-user", "dbPass": "my-pass" }
+```
+
+Using the built-in `expandFullChain` helper will separate the PEM and key from certificates if present in your secrets, and return the pem and key as separate secrets along with any original secrets from a given keyvault.
+```yaml
+workers:
+  -
+    resources:
+      - kind: all-secrets
+        vaultBaseURL: https://test-kv.vault.azure.net/
+    frequency: 60s
+    postChange: docker restart webapp
+    sinks:
+      - path: ./config.json
+        template: "{{ index .Secrets | expandFullChain | toValues | toJson }"
+```
+will output the following in the `config.json` file
+```json
+{"test-cert":"...","test-cert.key":"...","test-cert.pem":"...","some-string-secret":"...","different-cert":"...","different-cert.key":"...","different-cert.pem":"..."}
 ```
 
 ### Resources with special characters in their name
@@ -307,3 +327,13 @@ A filesystem watch is placed on the specified config file, and if the file is ch
 ## Troubleshooting builds
 * If you run into any issues when running `go build .`, you may need to update package dependencies
 * You can update a single package with `go get -u <package name>`
+## Releasing a new version
+
+1. Update the CHANGELOG accordingly
+1. Merge the PR
+1. Determine the most recent deployment tag version: `git checkout master && git fetch && git tag --sort=-creatordate | head -n1` - the new version tag should be above this using [semVer](https://semver.org/)
+1. Tag and push the new release; example:
+```
+git tag -a v1.7.0 -m "version 1.7.0"
+git push origin v1.7.0
+```
