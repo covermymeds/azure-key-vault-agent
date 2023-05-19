@@ -3,13 +3,14 @@ package templaterenderer
 import (
 	"bytes"
 	"fmt"
+	"io/ioutil"
+	"text/template"
+
 	"github.com/Masterminds/sprig"
 	"github.com/covermymeds/azure-key-vault-agent/certs"
 	"github.com/covermymeds/azure-key-vault-agent/certutil"
 	"github.com/covermymeds/azure-key-vault-agent/resource"
 	"github.com/covermymeds/azure-key-vault-agent/secrets"
-	"io/ioutil"
-	"text/template"
 )
 
 func RenderFile(path string, resourceMap resource.ResourceMap) string {
@@ -54,6 +55,24 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 			default:
 				panic(fmt.Sprintf("Got unexpected content type: %v", contentType))
 			}
+		},
+		"expandFullChain": func(items map[string]secrets.Secret) map[string]secrets.Secret {
+			results := make(map[string]secrets.Secret)
+
+			for secretName, secret := range items {
+				results[secretName] = secret
+				switch contentType := *secret.ContentType; contentType {
+				case "application/x-pem-file":
+					results[secretName+".key"] = cloneSecret(secret, certutil.PemPrivateKeyFromPem(*secret.Value))
+					results[secretName+".pem"] = cloneSecret(secret, certutil.PemChainFromPem(*secret.Value, false))
+				case "application/x-pkcs12":
+					results[secretName+".key"] = cloneSecret(secret, certutil.PemPrivateKeyFromPkcs12(*secret.Value))
+					results[secretName+".pem"] = cloneSecret(secret, certutil.PemChainFromPkcs12(*secret.Value, false))
+				default:
+					continue
+				}
+			}
+			return results
 		},
 		"fullChain": func(secret secrets.Secret) string {
 			switch contentType := *secret.ContentType; contentType {
@@ -101,4 +120,14 @@ func certFromSecret(secret secrets.Secret) string {
 	default:
 		panic(fmt.Sprintf("Got unexpected content type: %v", contentType))
 	}
+}
+
+func cloneSecret(secret secrets.Secret, parsedItem string) secrets.Secret {
+	item := secret
+	item.Value = nil
+	item_copy := *secret.Value
+	item.Value = &item_copy
+	*item.Value = parsedItem
+
+	return item
 }

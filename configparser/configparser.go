@@ -2,15 +2,16 @@ package configparser
 
 import (
 	"fmt"
-	"github.com/go-playground/validator/v10"
-	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"os/user"
 	"regexp"
 	"strconv"
 	"time"
+
+	"github.com/go-playground/validator/v10"
+	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 
 	"github.com/covermymeds/azure-key-vault-agent/config"
 	"github.com/gobuffalo/envy"
