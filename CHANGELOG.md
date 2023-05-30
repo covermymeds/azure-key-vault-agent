@@ -1,5 +1,12 @@
 # Changelog
 
+# [v1.7.1] - 2023-05-30
+
+### New bugfix release
+
+- Fixes bug in template helper `expandFullChain` introduced in https://github.com/covermymeds/azure-key-vault-agent/pull/86 where `expandFullChain` would throw a fatal error if secrets did not have a ContentType set
+
+
 # [v1.7.0] - 2023-05-19
 
 ### New minor release

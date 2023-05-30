@@ -61,15 +61,17 @@ func RenderInline(templateContents string, resourceMap resource.ResourceMap) str
 
 			for secretName, secret := range items {
 				results[secretName] = secret
-				switch contentType := *secret.ContentType; contentType {
-				case "application/x-pem-file":
-					results[secretName+".key"] = cloneSecret(secret, certutil.PemPrivateKeyFromPem(*secret.Value))
-					results[secretName+".pem"] = cloneSecret(secret, certutil.PemChainFromPem(*secret.Value, false))
-				case "application/x-pkcs12":
-					results[secretName+".key"] = cloneSecret(secret, certutil.PemPrivateKeyFromPkcs12(*secret.Value))
-					results[secretName+".pem"] = cloneSecret(secret, certutil.PemChainFromPkcs12(*secret.Value, false))
-				default:
-					continue
+				if secret.ContentType != nil {
+					switch contentType := *secret.ContentType; contentType {
+					case "application/x-pem-file":
+						results[secretName+".key"] = cloneSecret(secret, certutil.PemPrivateKeyFromPem(*secret.Value))
+						results[secretName+".pem"] = cloneSecret(secret, certutil.PemChainFromPem(*secret.Value, false))
+					case "application/x-pkcs12":
+						results[secretName+".key"] = cloneSecret(secret, certutil.PemPrivateKeyFromPkcs12(*secret.Value))
+						results[secretName+".pem"] = cloneSecret(secret, certutil.PemChainFromPkcs12(*secret.Value, false))
+					default:
+						continue
+					}
 				}
 			}
 			return results
