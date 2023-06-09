@@ -44,7 +44,11 @@ func ParseAndRunWorkersOnce(path string) {
 	// Initialize clients
 	clients := make(client.Clients)
 	for _, credentialConfig := range config.Credentials {
-		clients[credentialConfig.Name] = client.NewSpnClient(credentialConfig)
+		if credentialConfig.CliAuth {
+			clients[credentialConfig.Name] = client.NewCliClient()
+		} else {
+			clients[credentialConfig.Name] = client.NewClient(credentialConfig)
+		}
 	}
 
 	// Start workers
