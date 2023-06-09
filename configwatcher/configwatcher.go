@@ -3,12 +3,13 @@ package configwatcher
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+
 	"github.com/covermymeds/azure-key-vault-agent/client"
 	"github.com/covermymeds/azure-key-vault-agent/configparser"
 	"github.com/covermymeds/azure-key-vault-agent/worker"
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
-	"path/filepath"
 )
 
 func Watcher(path string) {
@@ -43,7 +44,7 @@ func ParseAndRunWorkersOnce(path string) {
 	// Initialize clients
 	clients := make(client.Clients)
 	for _, credentialConfig := range config.Credentials {
-		clients[credentialConfig.Name] = client.NewClient(credentialConfig)
+		clients[credentialConfig.Name] = client.NewSpnClient(credentialConfig)
 	}
 
 	// Start workers
@@ -65,8 +66,13 @@ func parseAndStartWorkers(path string) context.CancelFunc {
 
 	// Initialize clients
 	clients := make(client.Clients)
+	// Add all of the defined SPN credentials
 	for _, credentialConfig := range config.Credentials {
-		clients[credentialConfig.Name] = client.NewClient(credentialConfig)
+		if credentialConfig.CliAuth {
+			clients[credentialConfig.Name] = client.NewCliClient()
+		} else {
+			clients[credentialConfig.Name] = client.NewClient(credentialConfig)
+		}
 	}
 
 	// Start workers
