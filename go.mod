@@ -14,7 +14,7 @@ require (
 	github.com/luci/luci-go v0.0.0-20200220034857-6a27eb3e318d
 	github.com/sirupsen/logrus v1.4.2
 	github.com/twmb/algoimpl v0.0.0-20170717182524-076353e90b94
-	golang.org/x/crypto v0.9.0
+	golang.org/x/crypto v0.31.0
 	gopkg.in/yaml.v2 v2.3.0
 )
 
@@ -40,5 +40,5 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.0 // indirect
 	github.com/rogpeppe/go-internal v1.3.2 // indirect
 	github.com/smartystreets/goconvey v1.6.4 // indirect
-	golang.org/x/sys v0.8.0 // indirect
+	golang.org/x/sys v0.28.0 // indirect
 )
