@@ -43,7 +43,7 @@ func ParseAndRunWorkersOnce(path string) {
 	// Initialize clients
 	clients := make(client.Clients)
 	for _, credentialConfig := range config.Credentials {
-		clients[credentialConfig.Name] = client.NewClient(credentialConfig)
+		clients[credentialConfig.Name] = client.NewKeyvaultClient(credentialConfig)
 	}
 
 	// Start workers
@@ -66,7 +66,7 @@ func parseAndStartWorkers(path string) context.CancelFunc {
 	// Initialize clients
 	clients := make(client.Clients)
 	for _, credentialConfig := range config.Credentials {
-		clients[credentialConfig.Name] = client.NewClient(credentialConfig)
+		clients[credentialConfig.Name] = client.NewKeyvaultClient(credentialConfig)
 	}
 
 	// Start workers

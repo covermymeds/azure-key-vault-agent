@@ -83,10 +83,10 @@ func Process(ctx context.Context, clients client.Clients, workerConfig config.Wo
 	resources := resource.ResourceMap{make(map[string]certs.Cert), make(map[string]secrets.Secret), make(map[string]keys.Key)}
 
 	for _, resourceConfig := range workerConfig.Resources {
-		client := clients[resourceConfig.Credential]
+		c := clients[resourceConfig.Credential]
 		switch resourceConfig.Kind {
 		case config.CertKind:
-			result, err := certs.GetCert(client, resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
+			result, err := c.GetCert(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
 			if err != nil {
 				return err
 			}
@@ -96,7 +96,7 @@ func Process(ctx context.Context, clients client.Clients, workerConfig config.Wo
 			}
 
 		case config.SecretKind:
-			result, err := secrets.GetSecret(client, resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
+			result, err := c.GetSecret(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
 			if err != nil {
 				return err
 			}
@@ -106,14 +106,14 @@ func Process(ctx context.Context, clients client.Clients, workerConfig config.Wo
 			}
 
 		case config.AllSecretsKind:
-			result, err := secrets.GetSecrets(client, resourceConfig.VaultBaseURL)
+			result, err := c.GetSecrets(resourceConfig.VaultBaseURL)
 			if err != nil {
 				return err
 			}
 			resources.Secrets = result
 
 		case config.KeyKind:
-			result, err := keys.GetKey(client, resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
+			result, err := c.GetKey(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
 			if err != nil {
 				return err
 			}
