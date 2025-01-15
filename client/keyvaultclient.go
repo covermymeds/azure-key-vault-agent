@@ -97,7 +97,10 @@ func (c KeyvaultClient) GetSecret(vaultBaseURL string, secretName string, secret
 		return secrets.Secret{}, err
 	}
 
-	result := secrets.Secret(secret)
+	result := secrets.Secret{
+		Value: secret.Value,
+		ContentType: secret.ContentType,
+	}
 
 	return result, nil
 }
