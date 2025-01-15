@@ -70,12 +70,14 @@ func defaultCredentials() []config.CredentialConfig {
 		return make([]config.CredentialConfig, 0)
 	}
 
-	// Otherwise return a slice of n=1 credential
-	return []config.CredentialConfig{config.CredentialConfig{
+	kvconfig := config.KeyvaultCredentialConfig{
 		Name:         "default",
 		TenantID:     tenantID,
 		ClientID:     clientID,
-		ClientSecret: clientSecret}}
+		ClientSecret: clientSecret}
+
+	// Otherwise return a slice of n=1 credential
+	return []config.CredentialConfig{config.CredentialConfig{CredConfig: kvconfig}}
 }
 
 // Since a is not a pointer, a is a *copy* of the object being passed
@@ -84,7 +86,7 @@ func mergeCredentials(a []config.CredentialConfig, b []config.CredentialConfig) 
 	for i, addition := range b {
 		found = false
 		for j, base := range a {
-			if base.Name == addition.Name {
+			if base.GetName() == addition.GetName() {
 				found = true
 				a[j] = b[i]
 			}
@@ -107,11 +109,11 @@ func validateCredentialConfigs(credentialConfigs []config.CredentialConfig) {
 			panic(fmt.Sprintf("Error parsing credential config: %v", err))
 		}
 
-		if names[credentialConfig.Name] {
-			panic(fmt.Sprintf("Error parsing credential config: name %v used more than once", credentialConfig.Name))
+		if names[credentialConfig.GetName()] {
+			panic(fmt.Sprintf("Error parsing credential config: name %v used more than once", credentialConfig.GetName()))
 		}
 
-		names[credentialConfig.Name] = true
+		names[credentialConfig.GetName()] = true
 	}
 }
 
@@ -157,7 +159,7 @@ func parseWorkerConfigs(config Config) {
 			// Confirm that a Credential by this name exists
 			found := false
 			for _, credential := range config.Credentials {
-				if credential.Name == config.Workers[i].Resources[j].Credential {
+				if credential.GetName() == config.Workers[i].Resources[j].Credential {
 					found = true
 					break
 				}

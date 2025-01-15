@@ -19,7 +19,7 @@ type KeyvaultClient struct {
 	Client keyvault.BaseClient
 }
 
-func NewKeyvaultClient(cred config.CredentialConfig) KeyvaultClient {
+func NewKeyvaultClient(cred config.KeyvaultCredentialConfig) KeyvaultClient {
 	c := keyvault.New()
 	authorizer, err := iam.GetKeyvaultAuthorizer(cred.TenantID, cred.ClientID, cred.ClientSecret)
 	if err != nil {

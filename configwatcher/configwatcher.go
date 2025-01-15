@@ -3,12 +3,14 @@ package configwatcher
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+
 	"github.com/covermymeds/azure-key-vault-agent/client"
+	"github.com/covermymeds/azure-key-vault-agent/config"
 	"github.com/covermymeds/azure-key-vault-agent/configparser"
 	"github.com/covermymeds/azure-key-vault-agent/worker"
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
-	"path/filepath"
 )
 
 func Watcher(path string) {
@@ -36,19 +38,32 @@ func Watcher(path string) {
 	<-done // Block until done
 }
 
+func initializeClients(parsedConfig configparser.Config) client.Clients{
+	clients := make(client.Clients)
+	for _, credentialConfig := range parsedConfig.Credentials {
+		switch t := credentialConfig.CredConfig.(type) {
+		case config.KeyvaultCredentialConfig:
+			kvc := credentialConfig.CredConfig.(config.KeyvaultCredentialConfig)
+			clients[credentialConfig.GetName()] = client.NewKeyvaultClient(kvc)
+		case config.CyberarkCredentialConfig:
+			panic("Unimplemented")
+		default:
+			panic(fmt.Sprintf("Got unexpected type: %v", t))
+		}
+	}
+
+	return clients
+}
 func ParseAndRunWorkersOnce(path string) {
 	// Parse config file
-	config := configparser.ParseConfig(path)
+	parsedConfig := configparser.ParseConfig(path)
 
 	// Initialize clients
-	clients := make(client.Clients)
-	for _, credentialConfig := range config.Credentials {
-		clients[credentialConfig.Name] = client.NewKeyvaultClient(credentialConfig)
-	}
+	clients := initializeClients(parsedConfig)
 
 	// Start workers
 	log.Printf("Running workers once")
-	for _, workerConfig := range config.Workers {
+	for _, workerConfig := range parsedConfig.Workers {
 		err := worker.Process(nil, clients, workerConfig)
 		if err != nil {
 			log.Fatalf("Failed to get resource(s): %v", err)
@@ -61,16 +76,13 @@ func parseAndStartWorkers(path string) context.CancelFunc {
 	ctx, cancel := context.WithCancel(context.Background())
 
 	// Parse config file
-	config := configparser.ParseConfig(path)
+	parsedConfig := configparser.ParseConfig(path)
 
 	// Initialize clients
-	clients := make(client.Clients)
-	for _, credentialConfig := range config.Credentials {
-		clients[credentialConfig.Name] = client.NewKeyvaultClient(credentialConfig)
-	}
+	clients := initializeClients(parsedConfig)
 
 	// Start workers
-	for _, workerConfig := range config.Workers {
+	for _, workerConfig := range parsedConfig.Workers {
 		go worker.Worker(ctx, clients, workerConfig)
 	}
 
