@@ -46,7 +46,8 @@ func initializeClients(parsedConfig configparser.Config) client.Clients{
 			kvc := credentialConfig.CredConfig.(config.KeyvaultCredentialConfig)
 			clients[credentialConfig.GetName()] = client.NewKeyvaultClient(kvc)
 		case config.CyberarkCredentialConfig:
-			panic("Unimplemented")
+			cc := credentialConfig.CredConfig.(config.CyberarkCredentialConfig)
+			clients[credentialConfig.GetName()] = client.NewCyberarkClient(cc)
 		default:
 			panic(fmt.Sprintf("Got unexpected type: %v", t))
 		}
