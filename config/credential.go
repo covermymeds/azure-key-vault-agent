@@ -21,7 +21,7 @@ func (c *CredentialConfig) UnmarshalYAML(unmarshal func(interface{}) error) erro
 	}
 
 	var caConfig CyberarkCredentialConfig
-	if err := unmarshal(&caConfig); err == nil && caConfig.WorkloadID != "" {
+	if err := unmarshal(&caConfig); err == nil && caConfig.Login != "" {
 		c.CredConfig = caConfig
 		return nil
 	}
