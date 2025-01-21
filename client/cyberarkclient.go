@@ -27,7 +27,7 @@ func NewCyberarkClient(cred config.CyberarkCredentialConfig) CyberarkClient {
 
 	cyberarkClient, err := conjurapi.NewClientFromKey(cyberarkConfig,
 		authn.LoginPair{
-			Login: cred.Login,
+			Login: fmt.Sprintf("host/data/%s", cred.Login),
 			APIKey: cred.ApiKey,
 		},
 	)
