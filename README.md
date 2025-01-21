@@ -9,12 +9,18 @@ You can specify named credentials in the config file under the top-level key `cr
 Additionally, you can specify the following environment variables (or specify these key=value pairs in a file called `.env`):
 
 ```bash
+# These will be loaded as the credential name `default`
 AZURE_TENANT_ID=<tenant id>
 AZURE_CLIENT_ID=<SPN name including http>
 AZURE_CLIENT_SECRET=<SPN password>
-```
 
-They will be loaded as the credential name `default`.
+# These will be loaded as the credential name `default_cyberark`
+CYBERARK_LOGIN=
+CYBERARK_API_KEY=
+CYBERARK_ACCOUNT=
+CYBERARK_APPLIANCE_URL=
+CYBERARK_SAFE=
+```
 
 # Config
 
@@ -46,10 +52,13 @@ workers:
 
 ## Credentials
 The `credentials` section is a list of one or more named credentials used for fetching resources. Each
-credential has a `tenantID`, `clientID`, `clientSecret`.
+credential has either:
+
+1. a `tenantID`, `clientID`, and `clientSecret`
+1. a `login`, `apiKey`, `account`, `applianceUrl`, and `safe`
 
 The ENV vars (or .env file) will be injected
-as a credential with the name `default` if you don't override `default` within your config file.
+as a credential with the name `default` (or `default_cyberark`) if you don't override `default` (or `default_cyberark` within your config file.
 
 ## Resources
 
@@ -293,6 +302,32 @@ workers:
       - path: ./secret.txt
         template: "{{ .Secrets.thing1.Value }}{{ .Secrets.thing2.Value }}{{ .Secrets.thing3.Value }}"
 ```
+
+### Example Cyberark Config
+
+```yaml
+credentials:
+  -
+    name: cyberark_test
+    login: D-AppA-POC-Workload
+    apiKey: abcde1234567890
+    account: conjur
+    applianceURL: https://example.cyberark.cloud/api
+    safe: D-AppA
+      -
+resources:
+  - kind: secret
+    name: 'Operating System-SelfManaged-dummy-foo/password'
+    vaultBaseURL: https://example.cyberark.cloud/api
+    credential: cyberark_test
+    version: 1
+    alias: password
+```
+
+Notes:
+* the `login` attribute will have `host/data/` prepended to it, to simplify configuration
+* secrets are identified by a path. The secret name provided in config will be interpolated with `"data/vault/%s/%s", c.Safe, secretName`, so the prefix and safe need not be listed for every secret. Simliarly, this prefix will be stripped when retrieving all secrets
+* `vaultBaseURL` needs to be present and a valid URL, but is not used for cyberark secrets. It was left to maintain non-breaking config for AKV-sourced secrets.
 
 # Workers
 
