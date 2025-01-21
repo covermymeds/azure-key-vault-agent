@@ -2,6 +2,8 @@ package client
 
 import (
 	"fmt"
+	"strings"
+	"strconv"
 
 	"github.com/covermymeds/azure-key-vault-agent/certs"
 	"github.com/covermymeds/azure-key-vault-agent/config"
@@ -14,6 +16,7 @@ import (
 
 type CyberarkClient struct {
 	Client *conjurapi.Client
+	Safe string
 }
 
 func NewCyberarkClient(cred config.CyberarkCredentialConfig) CyberarkClient {
@@ -31,7 +34,7 @@ func NewCyberarkClient(cred config.CyberarkCredentialConfig) CyberarkClient {
 	if err != nil {
 		panic(err)
 	}
-	return CyberarkClient{cyberarkClient}
+	return CyberarkClient{Client: cyberarkClient, Safe: cred.Safe}
 }
 
 func (c CyberarkClient) GetCert(vaultBaseURL string, certName string, certVersion string) (certs.Cert, error) {
@@ -43,9 +46,22 @@ func (c CyberarkClient) GetCerts(vaultBaseURL string) (results []certs.Cert, err
 }
 
 func (c CyberarkClient) GetSecret(vaultBaseURL string, secretName string, secretVersion string) (secrets.Secret, error) {
-	secretValue, err := c.Client.RetrieveSecret(secretName)
+	var secretValue []byte
+	var err error
+
+	secretPath := fmt.Sprintf("data/vault/%s/%s", c.Safe, secretName)
+
+	if secretVersion == "" {
+		secretValue, err = c.Client.RetrieveSecret(secretPath)
+	}	else {
+		secretVersionInt, convErr := strconv.Atoi(secretVersion)
+		if convErr != nil {
+			return secrets.Secret{}, fmt.Errorf("failed to convert secret version to integer: %s", secretVersion)
+		}
+		secretValue, err = c.Client.RetrieveSecretWithVersion(secretPath, secretVersionInt)
+	}
 	if err != nil {
-			panic(err)
+		panic(err)
 	}
 
 	secretValueString := string(secretValue)
@@ -70,14 +86,14 @@ func (c CyberarkClient) GetSecrets(vaultBaseURL string) (results map[string]secr
 	results = make(map[string]secrets.Secret)
 
 	for resourceID, value := range secretValues {
+		modResourceID := strings.Replace(resourceID, fmt.Sprintf("conjur:variable:data/vault/%s/", c.Safe), "", 1)
 		secretValueString := string(value)
 		result := secrets.Secret{
 			Value: &secretValueString,
 			ContentType: nil,
 		}
 
-		fmt.Printf("%s = '%s'\n", resourceID, secretValueString)
-		results[resourceID] = result
+		results[modResourceID] = result
 	}
 
 	return results, nil

@@ -6,6 +6,7 @@ type CyberarkCredentialConfig struct {
 	ApiKey       string `yaml:"apiKey,omitempty" validate:"required"`
 	Account      string `yaml:"account,omitempty" validate:"required"`
 	ApplianceURL string `yaml:"applianceURL,omitempty" validate:"required"`
+	Safe         string `yaml:"safe,omitempty" validate:"required"`
 }
 
 func (kvc CyberarkCredentialConfig) GetName() string {
