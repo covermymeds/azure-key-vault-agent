@@ -65,19 +65,38 @@ func defaultCredentials() []config.CredentialConfig {
 	clientID := envy.Get("AZURE_CLIENT_ID", "")
 	clientSecret := envy.Get("AZURE_CLIENT_SECRET", "")
 
+	login := envy.Get("CYBERARK_LOGIN", "")
+	apiKey := envy.Get("CYBERARK_API_KEY", "")
+	account := envy.Get("CYBERARK_ACCOUNT", "")
+	applianceUrl := envy.Get("CYBERARK_APPLIANCE_URL", "")
+	safe := envy.Get("CYBERARK_SAFE", "")
+
+	var defaultConfigs []config.CredentialConfig
+
 	// If none of the values were passed, return an empty slice
-	if tenantID == "" && clientID == "" && clientSecret == "" {
-		return make([]config.CredentialConfig, 0)
+	if tenantID != "" || clientID != "" || clientSecret != "" {
+		kvconfig := config.KeyvaultCredentialConfig{
+			Name:         "default",
+			TenantID:     tenantID,
+			ClientID:     clientID,
+			ClientSecret: clientSecret}
+		defaultConfigs = append(defaultConfigs, config.CredentialConfig{CredConfig: kvconfig})
 	}
 
-	kvconfig := config.KeyvaultCredentialConfig{
-		Name:         "default",
-		TenantID:     tenantID,
-		ClientID:     clientID,
-		ClientSecret: clientSecret}
+	if login != "" || apiKey != "" || account != "" || applianceUrl != "" || safe != "" {
+		cyberarkConfig := config.CyberarkCredentialConfig{
+			Name: "default_cyberark",
+			Login: login,
+			ApiKey: apiKey,
+			Account: account,
+			ApplianceURL: applianceUrl,
+			Safe: safe,
+		}
+		defaultConfigs = append(defaultConfigs, config.CredentialConfig{CredConfig: cyberarkConfig})
+	}
 
 	// Otherwise return a slice of n=1 credential
-	return []config.CredentialConfig{config.CredentialConfig{CredConfig: kvconfig}}
+	return defaultConfigs
 }
 
 // Since a is not a pointer, a is a *copy* of the object being passed
