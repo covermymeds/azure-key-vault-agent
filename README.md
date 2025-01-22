@@ -58,7 +58,7 @@ credential has either:
 1. a `login`, `apiKey`, `account`, `applianceUrl`, and `safe`
 
 The ENV vars (or .env file) will be injected
-as a credential with the name `default` (or `default_cyberark`) if you don't override `default` (or `default_cyberark` within your config file.
+as a credential with the name `default` (or `default_cyberark`) if you don't override `default` (or `default_cyberark`) within your config file.
 
 ## Resources
 
