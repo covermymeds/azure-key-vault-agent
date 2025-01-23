@@ -39,7 +39,7 @@ func (c KeyvaultClient) GetCert(vaultBaseURL string, certName string, certVersio
 	return certs.Cert(cert), nil
 }
 
-func (c KeyvaultClient) GetCertByURL(certURL string) (certs.Cert, error) {
+func (c KeyvaultClient) getCertByURL(certURL string) (certs.Cert, error) {
 	u, err := url.Parse(certURL)
 	if err != nil {
 		log.Printf("Failed to parse URL for cert: %v", err.Error())
@@ -71,7 +71,7 @@ func (c KeyvaultClient) GetCerts(vaultBaseURL string) (results []certs.Cert, err
 	for {
 		for _, value := range pages.Values() {
 			certURL := *value.ID
-			cert, err := c.GetCertByURL(certURL)
+			cert, err := c.getCertByURL(certURL)
 			if err != nil {
 				log.Printf("Error loading cert contents: %v", err.Error())
 				return nil, err
@@ -105,7 +105,7 @@ func (c KeyvaultClient) GetSecret(vaultBaseURL string, secretName string, secret
 	return result, nil
 }
 
-func (c KeyvaultClient) GetSecretByURL(secretURL string) (string, secrets.Secret, error) {
+func (c KeyvaultClient) getSecretByURL(secretURL string) (string, secrets.Secret, error) {
 	u, err := url.Parse(secretURL)
 	if err != nil {
 		log.Printf("Failed to parse URL for secret: %v", err.Error())
@@ -139,7 +139,7 @@ func (c KeyvaultClient) GetSecrets(vaultBaseURL string) (results map[string]secr
 		for _, value := range pages.Values() {
 			if *value.Attributes.Enabled {
 				secretURL := *value.ID
-				secretName, secret, err := c.GetSecretByURL(secretURL)
+				secretName, secret, err := c.getSecretByURL(secretURL)
 
 				if err != nil {
 					log.Printf("Error loading secret contents: %v", err.Error())
@@ -173,7 +173,7 @@ func (c KeyvaultClient) GetKey(vaultBaseURL string, keyName string, keyVersion s
 	return result, err
 }
 
-func (c KeyvaultClient) GetKeyByURL(keyURL string) (keys.Key, error) {
+func (c KeyvaultClient) getKeyByURL(keyURL string) (keys.Key, error) {
 	u, err := url.Parse(keyURL)
 	if err != nil {
 		log.Printf("Failed to parse URL for key: %v", err.Error())
@@ -205,7 +205,7 @@ func (c KeyvaultClient) GetKeys(vaultBaseURL string) (results []keys.Key, err er
 	for {
 		for _, value := range pages.Values() {
 			keyURL := *value.Kid
-			key, err := c.GetKeyByURL(keyURL)
+			key, err := c.getKeyByURL(keyURL)
 			if err != nil {
 				log.Printf("Error loading key contents: %v", err.Error())
 				return nil, err

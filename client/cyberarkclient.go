@@ -107,3 +107,7 @@ func (c CyberarkClient) GetSecrets(vaultBaseURL string) (results map[string]secr
 func (c CyberarkClient) GetKey(vaultBaseURL string, keyName string, keyVersion string) (keys.Key, error) {
 	panic("cyberark does not have a Key secret type. use regular Secrets instead")
 }
+
+func (c CyberarkClient) GetKeys(vaultBaseURL string) ([]keys.Key, error) {
+	panic("cyberark does not have a Key secret type. use regular Secrets instead")
+}

@@ -12,6 +12,7 @@ type Client interface {
 	GetSecret(vaultBaseURL string, secretName string, secretVersion string) (secrets.Secret, error)
 	GetSecrets(vaultBaseURL string) (results map[string]secrets.Secret, err error)
 	GetKey(vaultBaseURL string, keyName string, keyVersion string) (keys.Key, error)
+	GetKeys(vaultBaseURL string) (results []keys.Key, err error)
 }
 
 type Clients map[string]Client
