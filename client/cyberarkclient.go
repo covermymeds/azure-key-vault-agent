@@ -35,22 +35,22 @@ func NewCyberarkClient(cred config.CyberarkCredentialConfig) CyberarkClient {
 	if err != nil {
 		panic(fmt.Sprintf("Error creating Cyberark client: %v", err.Error()))
 	}
-	return CyberarkClient{Client: cyberarkClient, Safe: cred.Safe}
+	return CyberarkClient{Client: cyberarkClient}
 }
 
-func (c CyberarkClient) GetCert(vaultBaseURL string, certName string, certVersion string) (certs.Cert, error) {
+func (c CyberarkClient) GetCert(safeName string, certName string, certVersion string) (certs.Cert, error) {
 	panic("cyberark doesn't have Cert type resources. use regular Secrets instead")
 }
 
-func (c CyberarkClient) GetCerts(vaultBaseURL string) (results []certs.Cert, err error) {
+func (c CyberarkClient) GetCerts(safeName string) (results []certs.Cert, err error) {
 	panic("cyberark doesn't have Cert type resources. use regular Secrets instead")
 }
 
-func (c CyberarkClient) GetSecret(vaultBaseURL string, secretName string, secretVersion string) (secrets.Secret, error) {
+func (c CyberarkClient) GetSecret(safeName string, secretName string, secretVersion string) (secrets.Secret, error) {
 	var secretValue []byte
 	var err error
 
-	secretPath := fmt.Sprintf("data/vault/%s/%s", c.Safe, secretName)
+	secretPath := fmt.Sprintf("data/vault/%s/%s", safeName, secretName)
 
 	if secretVersion == "" {
 		secretValue, err = c.Client.RetrieveSecret(secretPath)
@@ -75,7 +75,7 @@ func (c CyberarkClient) GetSecret(vaultBaseURL string, secretName string, secret
 	return result, nil
 }
 
-func (c CyberarkClient) GetSecrets(vaultBaseURL string) (results map[string]secrets.Secret, err error) {
+func (c CyberarkClient) GetSecrets(safeName string) (results map[string]secrets.Secret, err error) {
 	resources, err := c.Client.ResourceIDs(&conjurapi.ResourceFilter{Kind: "variable"})
 	if err != nil {
 		log.Printf("Error getting secrets: %v", err.Error())
@@ -91,7 +91,7 @@ func (c CyberarkClient) GetSecrets(vaultBaseURL string) (results map[string]secr
 	results = make(map[string]secrets.Secret)
 
 	for resourceID, value := range secretValues {
-		modResourceID := strings.Replace(resourceID, fmt.Sprintf("conjur:variable:data/vault/%s/", c.Safe), "", 1)
+		modResourceID := strings.Replace(resourceID, fmt.Sprintf("conjur:variable:data/vault/%s/", safeName), "", 1)
 		secretValueString := string(value)
 		result := secrets.Secret{
 			Value: &secretValueString,
@@ -104,10 +104,10 @@ func (c CyberarkClient) GetSecrets(vaultBaseURL string) (results map[string]secr
 	return results, nil
 }
 
-func (c CyberarkClient) GetKey(vaultBaseURL string, keyName string, keyVersion string) (keys.Key, error) {
+func (c CyberarkClient) GetKey(safeName string, keyName string, keyVersion string) (keys.Key, error) {
 	panic("cyberark does not have a Key secret type. use regular Secrets instead")
 }
 
-func (c CyberarkClient) GetKeys(vaultBaseURL string) ([]keys.Key, error) {
+func (c CyberarkClient) GetKeys(safeName string) ([]keys.Key, error) {
 	panic("cyberark does not have a Key secret type. use regular Secrets instead")
 }

@@ -69,7 +69,6 @@ func defaultCredentials() []config.CredentialConfig {
 	apiKey := envy.Get("CYBERARK_API_KEY", "")
 	account := envy.Get("CYBERARK_ACCOUNT", "")
 	applianceUrl := envy.Get("CYBERARK_APPLIANCE_URL", "")
-	safe := envy.Get("CYBERARK_SAFE", "")
 
 	var defaultConfigs []config.CredentialConfig
 
@@ -83,14 +82,13 @@ func defaultCredentials() []config.CredentialConfig {
 		defaultConfigs = append(defaultConfigs, config.CredentialConfig{CredConfig: kvconfig})
 	}
 
-	if login != "" || apiKey != "" || account != "" || applianceUrl != "" || safe != "" {
+	if login != "" || apiKey != "" || account != "" || applianceUrl != "" {
 		cyberarkConfig := config.CyberarkCredentialConfig{
 			Name: "default_cyberark",
 			Login: login,
 			ApiKey: apiKey,
 			Account: account,
 			ApplianceURL: applianceUrl,
-			Safe: safe,
 		}
 		defaultConfigs = append(defaultConfigs, config.CredentialConfig{CredConfig: cyberarkConfig})
 	}
@@ -152,39 +150,38 @@ func parseWorkerConfigs(config Config) {
 		// Check each resourceConfig in the workerConfig
 		configMap := make(map[string]int)
 		for j, _ := range workerConfig.Resources {
-			_, ok := configMap[config.Workers[i].Resources[j].VaultBaseURL]
+			resourceKind := config.Workers[i].Resources[j].GetKind()
+			resourceCredential := config.Workers[i].Resources[j].GetCredential()
+			resourceVault := config.Workers[i].Resources[j].GetVault()
+
+			_, ok := configMap[resourceVault]
 			if !ok {
-				configMap[config.Workers[i].Resources[j].VaultBaseURL] = 0
+				configMap[resourceVault] = 0
 			}
-			if config.Workers[i].Resources[j].Kind == "secret" {
-				configMap[config.Workers[i].Resources[j].VaultBaseURL] |= 1
+			if resourceKind == "secret" || resourceKind == "cyberark-secret" {
+				configMap[resourceVault] |= 1
 			}
-			if config.Workers[i].Resources[j].Kind == "all-secrets" {
-				configMap[config.Workers[i].Resources[j].VaultBaseURL] |= 2
+			if resourceKind == "all-secrets" || resourceKind == "all-cyberark-secrets" {
+				configMap[resourceVault] |= 2
 			}
-			if configMap[config.Workers[i].Resources[j].VaultBaseURL] == 3 {
-				panic(fmt.Sprintf("Error parsing worker config: all-secrets resource will overwrite secrets. Please only use one or the other for the vault at %s", config.Workers[i].Resources[j].VaultBaseURL))
-			}
-
-			if config.Workers[i].Resources[j].Kind != "all-secrets" && config.Workers[i].Resources[j].Name == "" {
-				panic(fmt.Sprintf("Error parsing worker config: Name is required for %v resource", config.Workers[i].Resources[j].Kind))
+			if configMap[resourceVault] == 3 {
+				panic(fmt.Sprintf("Error parsing worker config: all-secrets resource will overwrite secrets. Please only use one or the other for the vault at %s", resourceVault))
 			}
 
-			// If no Credential is specified, default to "default"
-			if config.Workers[i].Resources[j].Credential == "" {
-				config.Workers[i].Resources[j].Credential = "default"
+			if !(resourceKind == "all-secrets" || resourceKind == "all-cyberark-secrets") && config.Workers[i].Resources[j].GetName() == "" {
+				panic(fmt.Sprintf("Error parsing worker config: Name is required for %v resource", resourceKind))
 			}
 
 			// Confirm that a Credential by this name exists
 			found := false
 			for _, credential := range config.Credentials {
-				if credential.GetName() == config.Workers[i].Resources[j].Credential {
+				if credential.GetName() == resourceCredential {
 					found = true
 					break
 				}
 			}
 			if !found {
-				panic(fmt.Sprintf("Error parsing worker config: credential %v not found", config.Workers[i].Resources[j].Credential))
+				panic(fmt.Sprintf("Error parsing worker config: credential %v not found", resourceCredential))
 			}
 		}
 

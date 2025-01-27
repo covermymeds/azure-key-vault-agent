@@ -19,7 +19,6 @@ CYBERARK_LOGIN=
 CYBERARK_API_KEY=
 CYBERARK_ACCOUNT=
 CYBERARK_APPLIANCE_URL=
-CYBERARK_SAFE=
 ```
 
 # Config
@@ -55,7 +54,7 @@ The `credentials` section is a list of one or more named credentials used for fe
 credential has either:
 
 1. a `tenantID`, `clientID`, and `clientSecret`
-1. a `login`, `apiKey`, `account`, `applianceUrl`, and `safe`
+1. a `login`, `apiKey`, `account`, and `applianceUrl`
 
 The ENV vars (or .env file) will be injected
 as a credential with the name `default` (or `default_cyberark`) if you don't override `default` (or `default_cyberark`) within your config file.
@@ -65,18 +64,20 @@ as a credential with the name `default` (or `default_cyberark`) if you don't ove
 The `resources` section is a list of one or more resources to fetch. Each resource has a `kind`, `vaultBaseURL`,
 and optional `credential` field.
 
-Valid kinds are: `cert`, `secret`, `all-secrets`, and `key`.
+Valid kinds for KeyVault resources are: `cert`, `secret`, `all-secrets`, and `key`.
 
-Note: The `all-secrets` fetches all of the secrets found in the vault, and cannot be used in conjunction with any specific secrets for the same vaultBaseURL
+Valid kinds for Cyberark resources are: `cyberark-secret` and `all-cyberark-secrets`.
 
-Unless a resource has a `kind` of `all-secrets`, there is also a required `name` field for the resource.
+Note: The `all-secrets` and `all-cyberark-secrets` kinds fetch all of the secrets found in the vault, and cannot be used in conjunction with any specific secrets for the same vault
 
-If you don't specify `credential`, a credential with the name `default` will be used (you can either
-specify the `default` credential in the `credentials` array, or as ENV vars / .env file)
+Unless a resource has a `kind` of `all-secrets` or `all-cyberark-secrets`, there is also a required `name` field for the resource.
+
+If you don't specify `credential`, a credential with the name `default` will be used for AKV resources (you can either
+specify the `default` credential in the `credentials` array, or as ENV vars / .env file). For Cyberark resources, the default credential is `default_cyberark`
 
 ### Aliases
 
-A resource with a kind set to `cert`, `secret`, or `key` may specify an alias. This alias may be used to reference the resource in your specified `sink`:
+A resource with a kind set to `cert`, `secret`, `cyberark-secret` or `key` may specify an alias. This alias may be used to reference the resource in your specified `sink`:
 
 ```yaml
 workers:
@@ -313,21 +314,18 @@ credentials:
     apiKey: abcde1234567890
     account: conjur
     applianceURL: https://example.cyberark.cloud/api
-    safe: D-AppA
-      -
 resources:
-  - kind: secret
+  - kind: cyberark-secret
     name: 'Operating System-SelfManaged-dummy-foo/password'
-    vaultBaseURL: https://example.cyberark.cloud/api
     credential: cyberark_test
+    safeName: D-AppA
     version: 1
     alias: password
 ```
 
 Notes:
 * the `login` attribute will have `host/data/` prepended to it, to simplify configuration
-* secrets are identified by a path. The secret name provided in config will be interpolated with `"data/vault/%s/%s", c.Safe, secretName`, so the prefix and safe need not be listed for every secret. Simliarly, this prefix will be stripped when retrieving all secrets
-* `vaultBaseURL` needs to be present and a valid URL, but is not used for cyberark secrets. It was left to maintain non-breaking config for AKV-sourced secrets.
+* secrets are identified by a path. The secret name provided in config will be interpolated with `"data/vault/%s/%s", safeName, secretName`, so the prefix need not be listed for every secret. Simliarly, this prefix and `safeName` will be stripped when retrieving all secrets
 
 # Workers
 

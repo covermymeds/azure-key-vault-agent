@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"reflect"
 	"syscall"
 	"time"
 
@@ -83,47 +84,64 @@ func Process(ctx context.Context, clients client.Clients, workerConfig config.Wo
 	resources := resource.ResourceMap{make(map[string]certs.Cert), make(map[string]secrets.Secret), make(map[string]keys.Key)}
 
 	for _, resourceConfig := range workerConfig.Resources {
-		c := clients[resourceConfig.Credential]
-		switch resourceConfig.Kind {
+		c := clients[resourceConfig.GetCredential()]
+		switch resourceConfig.GetKind() {
 		case config.CertKind:
-			result, err := c.GetCert(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
+			result, err := c.GetCert(resourceConfig.GetVault(), resourceConfig.GetName(), resourceConfig.GetVersion())
 			if err != nil {
 				return err
 			}
-			resources.Certs[resourceConfig.Name] = result
-			if resourceConfig.Alias != "" {
-				resources.Certs[resourceConfig.Alias] = result
+			resources.Certs[resourceConfig.GetName()] = result
+			if resourceConfig.GetAlias() != "" {
+				resources.Certs[resourceConfig.GetAlias()] = result
 			}
 
 		case config.SecretKind:
-			result, err := c.GetSecret(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
+			result, err := c.GetSecret(resourceConfig.GetVault(), resourceConfig.GetName(), resourceConfig.GetVersion())
 			if err != nil {
 				return err
 			}
-			resources.Secrets[resourceConfig.Name] = result
-			if resourceConfig.Alias != "" {
-				resources.Secrets[resourceConfig.Alias] = result
+			resources.Secrets[resourceConfig.GetName()] = result
+			if resourceConfig.GetAlias() != "" {
+				resources.Secrets[resourceConfig.GetAlias()] = result
 			}
 
 		case config.AllSecretsKind:
-			result, err := c.GetSecrets(resourceConfig.VaultBaseURL)
+			result, err := c.GetSecrets(resourceConfig.GetVault())
 			if err != nil {
 				return err
 			}
 			resources.Secrets = result
 
 		case config.KeyKind:
-			result, err := c.GetKey(resourceConfig.VaultBaseURL, resourceConfig.Name, resourceConfig.Version)
+			result, err := c.GetKey(resourceConfig.GetVault(), resourceConfig.GetName(), resourceConfig.GetVersion())
 			if err != nil {
 				return err
 			}
-			resources.Keys[resourceConfig.Name] = result
-			if resourceConfig.Alias != "" {
-				resources.Keys[resourceConfig.Alias] = result
+			resources.Keys[resourceConfig.GetName()] = result
+			if resourceConfig.GetAlias() != "" {
+				resources.Keys[resourceConfig.GetAlias()] = result
+			}
+
+		case config.AllCyberarkSecretsKind:
+			result, err := c.GetSecrets(resourceConfig.GetVault())
+			if err != nil {
+				return err
+			}
+			resources.Secrets = result
+
+		case config.CyberarkSecretKind:
+			result, err := c.GetSecret(resourceConfig.GetVault(), resourceConfig.GetName(), resourceConfig.GetVersion())
+			if err != nil {
+				return err
+			}
+			resources.Secrets[resourceConfig.GetName()] = result
+			if resourceConfig.GetAlias() != "" {
+				resources.Secrets[resourceConfig.GetAlias()] = result
 			}
 
 		default:
-			panic(fmt.Sprintf("Invalid sink kind: %v", resourceConfig.Kind))
+			panic(fmt.Sprintf("Invalid resource kind: %v for credential type %v", resourceConfig.GetKind(), reflect.TypeOf(c)))
 		}
 	}
 

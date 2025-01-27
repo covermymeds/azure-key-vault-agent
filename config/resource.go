@@ -1,19 +1,50 @@
 package config
 
+import "fmt"
+
 type ResourceKind string
 
 const (
-	CertKind       ResourceKind = "cert"
-	KeyKind        ResourceKind = "key"
-	SecretKind     ResourceKind = "secret"
-	AllSecretsKind ResourceKind = "all-secrets"
+	CertKind               ResourceKind = "cert"
+	KeyKind                ResourceKind = "key"
+	SecretKind             ResourceKind = "secret"
+	AllSecretsKind         ResourceKind = "all-secrets"
+	AllCyberarkSecretsKind ResourceKind = "all-cyberark-secrets"
+	CyberarkSecretKind     ResourceKind = "cyberark-secret"
 )
 
+type GenericResource interface {
+	GetName()       string
+	GetCredential() string
+	GetKind()       ResourceKind
+	GetVault()      string
+	GetVersion()    string
+	GetAlias()      string
+}
+
 type ResourceConfig struct {
-	Alias        string       `yaml:"alias,omitempty"`
-	Credential   string       `yaml:"credential,omitempty"`
-	Kind         ResourceKind `yaml:"kind,omitempty" validate:"required,oneof=cert key secret all-secrets"`
-	Name         string       `yaml:"name"`
-	VaultBaseURL string       `yaml:"vaultBaseURL,omitempty" validate:"required,url"`
-	Version      string       `yaml:"version,omitempty"`
+	GenericResource
+}
+
+func (c *ResourceConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+
+	var kvResource KeyvaultResourceConfig
+	if err := unmarshal(&kvResource); err == nil && kvResource.VaultBaseURL != "" {
+		if kvResource.Credential == "" {
+			kvResource.Credential = "default"
+		}
+		c.GenericResource = kvResource
+		return nil
+	}
+
+	var caResource CyberarkResourceConfig
+	if err := unmarshal(&caResource); err == nil && caResource.SafeName != "" {
+		if caResource.Credential == "" {
+			caResource.Credential = "default_cyberark"
+		}
+		c.GenericResource = caResource
+		return nil
+	}
+
+	return fmt.Errorf("unrecognized resource type")
 }
