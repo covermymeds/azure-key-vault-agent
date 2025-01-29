@@ -1,5 +1,10 @@
 # Changelog
 
+# [v1.8.0] - 2025-01-29
+
+### New Minor Release
+- Added support for Cyberark-sourced secrets
+
 # [v1.7.1] - 2023-05-30
 
 ### New bugfix release

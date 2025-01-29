@@ -1,8 +1,30 @@
 package config
 
+import (
+	"fmt"
+)
+
+type CredConfig interface {
+	GetName() string
+}
+
 type CredentialConfig struct {
-	Name         string `yaml:"name,omitempty" validate:"required"`
-	TenantID     string `yaml:"tenantID,omitempty" validate:"required"`
-	ClientID     string `yaml:"clientID,omitempty" validate:"required"`
-	ClientSecret string `yaml:"clientSecret,omitempty" validate:"required"`
+	CredConfig
+}
+
+func (c *CredentialConfig) UnmarshalYAML(unmarshal func(interface{}) error) error {
+
+	var kvConfig KeyvaultCredentialConfig
+	if err := unmarshal(&kvConfig); err == nil && kvConfig.ClientID != "" {
+		c.CredConfig = kvConfig
+		return nil
+	}
+
+	var caConfig CyberarkCredentialConfig
+	if err := unmarshal(&caConfig); err == nil && caConfig.Login != "" {
+		c.CredConfig = caConfig
+		return nil
+	}
+
+	return fmt.Errorf("unrecognized credential type")
 }

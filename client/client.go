@@ -1,22 +1,18 @@
 package client
 
 import (
-	"fmt"
-
-	"github.com/covermymeds/azure-key-vault-agent/config"
-	"github.com/covermymeds/azure-key-vault-agent/iam"
-
-	"github.com/Azure/azure-sdk-for-go/services/keyvault/2016-10-01/keyvault"
+	"github.com/covermymeds/azure-key-vault-agent/certs"
+	"github.com/covermymeds/azure-key-vault-agent/keys"
+	"github.com/covermymeds/azure-key-vault-agent/secrets"
 )
 
-type Clients map[string]keyvault.BaseClient
-
-func NewClient(cred config.CredentialConfig) keyvault.BaseClient {
-	client := keyvault.New()
-	authorizer, err := iam.GetKeyvaultAuthorizer(cred.TenantID, cred.ClientID, cred.ClientSecret)
-	if err != nil {
-		panic(fmt.Sprintf("Error authorizing: %v", err.Error()))
-	}
-	client.Authorizer = authorizer
-	return client
+type Client interface {
+	GetCert(vault string, certName string, certVersion string) (certs.Cert, error)
+	GetCerts(vault string) (results []certs.Cert, err error)
+	GetSecret(vault string, secretName string, secretVersion string) (secrets.Secret, error)
+	GetSecrets(vault string) (results map[string]secrets.Secret, err error)
+	GetKey(vault string, keyName string, keyVersion string) (keys.Key, error)
+	GetKeys(vault string) (results []keys.Key, err error)
 }
+
+type Clients map[string]Client
