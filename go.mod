@@ -1,8 +1,6 @@
 module github.com/covermymeds/azure-key-vault-agent
 
-go 1.22.7
-
-toolchain go1.23.4
+go 1.23
 
 require (
 	github.com/Azure/azure-sdk-for-go v37.1.0+incompatible
